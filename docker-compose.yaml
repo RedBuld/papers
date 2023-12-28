@@ -1,0 +1,28 @@
+services:
+    # app:
+    #     image: ubuntu:22.04
+    #     container_name: app
+    #     ports:
+    #         - 8000:8000
+    #     restart: always
+    #     depends_on:
+    #         - psql16
+    #     volumes:
+    #         - ./back:/mnt/app
+    #     networks:
+    #         - app_psql16
+    #     command: ["sleep","infinity"]
+        # python -m uvicorn --host 0.0.0.0 --port 8000 --log-level debug app_v2.main:app
+    psql16:
+        image: postgres:16-alpine
+        container_name: psql16
+        ports:
+            - "5432:5432"
+        restart: always
+        environment:
+            POSTGRES_PASSWORD: secret
+        networks:
+            - app_psql16
+networks:
+    app_psql16:
+        name: app-psql16

@@ -1,0 +1,39 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+html {
+    font-size: 15px;
+}
+
+@layer base {
+    .features-list h1 {
+      @apply text-lg;
+      @apply font-bold;
+      @apply mb-5;
+    }
+    .features-list h2 {
+        @apply text-lg;
+        @apply font-bold;
+        @apply mb-4;
+    }
+    .features-list h3 {
+        @apply text-lg;
+        @apply font-bold;
+        @apply mb-3;
+    }
+    .features-list ul {
+        list-style: circle;
+        list-style-position: inside;
+        @apply ml-2;
+    }
+    .features-list ol {
+        list-style: decimal;
+        list-style-position: inside;
+        @apply ml-2;
+    }
+    .features-list ol li,
+    .features-list ul li {
+        @apply mb-1;
+    }
+  }
