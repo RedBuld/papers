@@ -1,181 +1,226 @@
 import React, { useState, useEffect } from 'react'
-import { API } from '../../api/api'
-import FilterSelect from '../filters/filterSelect'
-import Search from '../filters/search'
-import Toggler from '../filters/filterToggler'
-import Table from '../tables/table'
 import BorrowersTableRow from './borrowersTableRow'
-import { allBorrowersColumns as borrowersColumns, groupedBorrowersColumns as groupedColumns } from '../../contexts/borrowersVariables'
-import { getBorrowersColumnsOrder, getBorrowersColumnsActive, setBorrowersColumnsActive, setBorrowersColumnsOrder, resetBorrowersColumnsOrder, resetBorrowersColumnsActive } from '../../contexts/borrowersFunctions'
+import {
+	allColumns,
+	groupedColumns,
+	immutableActiveFilters
+} from '../../contexts/borrowersVariables'
+import {
+	GetColumnsOrder, SetColumnsOrder, ResetColumnsOrder,
+	GetColumnsActive, SetColumnsActive, ResetColumnsActive,
+	GetActiveFilters, SetActiveFilters, ResetActiveFilters
+} from '../../contexts/borrowers'
+import { API } from '../../api/api'
+import Filters from '../filters/filters'
+import Table from '../tables/table'
 
 function BorrowersTable(props)
 {
-	const {
-		getBorrowersUrl, pageSize=50,
-		usePagination, useColumnsConfigurator
-	} = props
-
-	let filters_labels = {
-        'acra': 'Акра',
-        'raexpert': 'Эксперт',
-        'nkr': 'НКР',
-        'nra': 'НРА'
-    }
-
-	const [_trigger, setTrigger] = useState(performance.now())
+	const useFilters = props?.useFilters ?? true
+	const usePagination = props?.usePagination ?? true
+	
+	const defaultSortBy = props?.defaultSortBy ?? 'name'
+	const defaultSortDir = props?.defaultSortDir ?? 'asc'
+	
+	const [loading, setLoading] = useState(true)
+	const [initialLoading, setInitialLoading] = useState(true)
 
 	const [borrowers, setBorrowers] = useState([])
-	const [ratings, setRatings] = useState({})
-	const [borrowersRating, setBorrowersRating] = useState({})
-	const [borrowersSearch, setBorrowersSearch] = useState('')
-	const [borrowersLooseFilter, setBorrowersLooseFilter] = useState(true)
-	const [borrowersCurrentPage, setBorrowersCurrentPage] = useState(1)
-	const [borrowersTotalPages, setBorrowersTotalPages] = useState(0)
-	const [borrowersOrdering, setBorrowersOrdering] = useState({'order_by':'id', 'order':'asc'})
-	const [borrowersPageSize, setBorrowersPageSize] = useState(pageSize)
-	const [borrowersLoading, setBorrowersLoading] = useState(true)
-	const [borrowersInitialLoading, setBorrowersInitialLoading] = useState(true)
-	const [borrowersColumnsOrder, setLocalBorrowersColumnsOrder] = useState(getBorrowersColumnsOrder())
-	const [borrowersColumnsActive, setLocalBorrowersColumnsActive] = useState(getBorrowersColumnsActive())
+	const [ordering, _setOrdering] = useState({'order_by':defaultSortBy, 'order':defaultSortDir})
 
-	const proxySetBorrowersColumnsOrder = (_,order) => {
-		setLocalBorrowersColumnsOrder( setBorrowersColumnsOrder(order) )
-	}
-	const proxySetBorrowersColumnsActive = (_,active) => {
-		setLocalBorrowersColumnsActive( setBorrowersColumnsActive(active) )
-	}
+	// PAGINATION
+	const [pageSize, setPageSize] = useState(50)
+	const [totalPages, setTotalPages] = useState(0)
+	const [currentPage, setCurrentPage] = useState(1)
 
-	const proxyResetBorrowersColumnsOrder = (_) => {
-		setLocalBorrowersColumnsOrder( resetBorrowersColumnsOrder() )
-	}
-	const proxyResetBorrowersColumnsActive = (_) => {
-		setLocalBorrowersColumnsActive( resetBorrowersColumnsActive() )
-	}
+	// FILTERS
+	const [filtersLoaded, setFiltersLoaded] = useState(false)
+	const [filtersActive, _setFiltersActive] = useState(getFiltersActive())
+	const [filtersAll, setFiltersAll] = useState({})
+	const [filtersValues, setFiltersValues] = useState({'search': ''})
 
-	const setPage = (_page) => {
-		!borrowersLoading && setBorrowersCurrentPage(_page)
-	}
+	// COLUMNS
+	const [columnsOrder, _setColumnsOrder] = useState( getColumnsOrder() )
+	const [columnsActive, _setColumnsActive] = useState( getColumnsActive() )
 
-	const setOrdering = (key) => {
-		let _order = key === borrowersOrdering['order_by'] && borrowersOrdering['order'] === "asc" ? "desc" : "asc"
-		setBorrowersOrdering({'order_by':key, 'order':_order})
+	function getColumnsOrder()
+	{
+		return GetColumnsOrder()
+	}
+	function setColumnsOrder(order)
+	{
+		_setColumnsOrder( SetColumnsOrder(order) )
+	}
+	function resetColumnsOrder()
+	{
+		_setColumnsOrder( ResetColumnsOrder() )
 	}
 
-	const getFilters = async () => {
-		const response = await API.get('/borrowers/filters')
-		if( response.status === 200 )
-		{
-			setRatings(response.data.ratings)
-		}
+
+	function getColumnsActive()
+	{
+		return GetColumnsActive()
+	}
+	function setColumnsActive(active)
+	{
+		_setColumnsActive( SetColumnsActive(active) )
+	}
+	function resetColumnsActive()
+	{
+		_setColumnsActive( ResetColumnsActive() )
 	}
 
-	const getBorrowers = async () => {
-		setBorrowersLoading(true)
-		let url = `${getBorrowersUrl}`
+
+	function getFiltersActive()
+	{
+		return GetActiveFilters()
+	}
+	function setFiltersActive(active)
+	{
+		_setFiltersActive( SetActiveFilters(active) )
+	}
+	function resetFiltersActive()
+	{
+		_setFiltersActive( ResetActiveFilters() )
+	}
+
+
+	function setPage(_page)
+	{
+		!loading && setCurrentPage(_page)
+	}
+
+	function setOrdering(key)
+	{
+		let _order = key === ordering['order_by'] && ordering['order'] === "asc" ? "desc" : "asc"
+		_setOrdering({'order_by':key, 'order':_order})
+	}
+
+	async function loadBorrowers()
+	{
+		setLoading(true)
+
+		let url = '/borrowers/'
+		let query = ''
 		let data = {}
 		let _args = []
-		if(usePagination)
+
+		// STATIG ARGS
+		if( usePagination )
 		{
-			_args.push(`page=${borrowersCurrentPage}`)
-			_args.push(`page_size=${borrowersPageSize}`)
+			_args.push(`page=${currentPage}`)
+			_args.push(`page_size=${pageSize}`)
 		}
-		_args.push(`order=${borrowersOrdering['order']}`)
-		_args.push(`order_by=${borrowersOrdering['order_by']}`)
-		data['loose'] = borrowersLooseFilter
-		for( const [bt_agency,br_ratings] of Object.entries(borrowersRating) )
+		_args.push(`order=${ordering['order']}`)
+		_args.push(`order_by=${ordering['order_by']}`)
+
+		for( const filter_key of filtersActive )
 		{
-			data[bt_agency] = br_ratings
+			const filter_data = filtersAll[filter_key] ?? null
+			const filter_value = filtersValues[filter_key] ?? null
+
+			console.log('filter_key',filter_key)
+			console.log('filter_data',filter_data)
+			console.log('filter_value',filter_value)
+
+			if( !filter_data )
+			{
+				continue
+			}
+			
+			let add = false
+
+			if( filter_data.mode === 'bool' )
+			{
+				add = true
+			}
+			if( filter_data.mode === 'select' && filter_value && filter_value.length>0 )
+			{
+				add = true
+			}
+			if( filter_data.mode === 'range' && filter_value && ( filter_value.min !== '' || filter_value.max !== '' ) )
+			{
+				add = true
+			}
+			if( filter_data.mode === 'date-range' && filter_value && ( filter_value.min !== '' || filter_value.max !== '' ) )
+			{
+				add = true
+			}
+
+			if( add )
+			{
+				data[filter_key] = filter_value
+			}
 		}
-		if( borrowersSearch )
+
+		query = _args.join('&')
+		if( query.length > 0 )
 		{
-			data['search'] = borrowersSearch
-		}
-		let args = _args.join('&')
-		if( args.length > 0 )
-		{
-			url = url + '?' + args
+			url = url + '?' + query
 		} 
 		const response = await API.post(url, data)
 		if( response.status === 200 )
 		{
 			setBorrowers(response.data.results)
-			setBorrowersCurrentPage(response.data.total < response.data.page ? response.data.total : response.data.page)
-            setBorrowersTotalPages(response.data.total)
+			setCurrentPage(response.data.total < response.data.page ? response.data.total : response.data.page)
+            setTotalPages(response.data.total)
 		}
-		setBorrowersLoading(false)
-		setBorrowersInitialLoading(false)
-	}
-
-	const refresh = async () => {
-		setTrigger(performance.now())
+		setLoading(false)
+		setInitialLoading(false)
 	}
 
 	useEffect(() => {
-		getBorrowers()
+		loadBorrowers()
 		// eslint-disable-next-line react-hooks/exhaustive-deps
-	}, [borrowersCurrentPage,borrowersOrdering,borrowersPageSize,borrowersRating,borrowersSearch,borrowersLooseFilter,borrowersColumnsActive,_trigger])
+	}, [ordering,currentPage,pageSize,filtersValues])
 
 	useEffect(() => {
-		getFilters()
-		window.addEventListener('refreshBorrowers', refresh)
-		return () => {
-			window.removeEventListener('refreshBorrowers', refresh)
-		}
+		// window.addEventListener('refreshBorrowers', refresh)
+		// return () => {
+		// 	window.removeEventListener('refreshBorrowers', refresh)
+		// }
 		// eslint-disable-next-line react-hooks/exhaustive-deps
 	}, [])
-
-	const filters = () => {
-		let _drops = []
-		let _keys = Object.keys(ratings)
-		// let _index = 0
-		// let _last = _keys.length
-		for (const agency of _keys) {
-			// _index++
-			_drops.push(
-				<FilterSelect key={agency} placeholder={filters_labels[agency]} options={ratings[agency]} values={borrowersRating[agency]} setValues={(values) => {setBorrowersRating((prev) => ({...prev,[agency]:[...values]}))}} />
-			)
-			// if(_index < _last)
-			// {
-			// 	_drops.push( <span key={agency+'-and-or'} className="inline-flex justify-center text-xs w-5 text-gray-400">{ borrowersLooseFilter ? "или" : "и"}</span> )
-			// }
-		}
-		return _drops
-	}
 
 	return (
 		<section className="min-w-full">
 			<div className="flow-root min-w-full">
 				<div className="align-middle py-2 max-w-full inline-block">
-					<div className="flex flex-col md:flex-row flex-wrap lg:flex-nowrap items-center py-2 gap-4 relative z-[2]">
-						<Toggler label="И ⇔ ИЛИ" value={borrowersLooseFilter} setValue={setBorrowersLooseFilter}/>
-						{ filters() }
-						<Search value={borrowersSearch} setValue={setBorrowersSearch} />
-					</div>
+					{ useFilters && (
+					<Filters
+						source='borrowers'
+						allColumns={allColumns}
+						filtersImmutable={immutableActiveFilters}
+						filtersAll={filtersAll} setFiltersAll={setFiltersAll}
+						filtersActive={filtersActive} setFiltersActive={setFiltersActive} resetFiltersActive={resetFiltersActive}
+						filtersValues={filtersValues} setFiltersValues={setFiltersValues}
+						filtersLoaded={filtersLoaded} setFiltersLoaded={setFiltersLoaded}
+					/>
+					) }
 					<Table
-						initialLoading={borrowersInitialLoading}
+						initialLoading={initialLoading}
 						usePagination={usePagination}
-						useColumnsConfigurator={useColumnsConfigurator}
 						//
 						groups={groupedColumns}
-						columns={borrowersColumns}
-						columnsOrder={borrowersColumnsOrder}
-						columnsActive={borrowersColumnsActive}
+						columns={allColumns}
+						columnsOrder={columnsOrder}
+						columnsActive={columnsActive}
 						//
-						order={borrowersOrdering['order']}
-						orderBy={borrowersOrdering['order_by']}
-						pageSize={borrowersPageSize}
-						currentPage={borrowersCurrentPage}
-						totalPages={borrowersTotalPages}
+						order={ordering['order']}
+						orderBy={ordering['order_by']}
+						pageSize={pageSize}
+						totalPages={totalPages}
+						currentPage={currentPage}
 						//
 						setOrdering={setOrdering}
 						setPage={setPage}
-						setPageSize={setBorrowersPageSize}
-						getColumnsActive={getBorrowersColumnsActive}
-						setColumnsActive={proxySetBorrowersColumnsActive}
-						resetColumnsActive={proxyResetBorrowersColumnsActive}
-						getColumnsOrder={getBorrowersColumnsOrder}
-						setColumnsOrder={proxySetBorrowersColumnsOrder}
-						resetColumnsOrder={proxyResetBorrowersColumnsOrder}
+						setPageSize={setPageSize}
+						getColumnsOrder={getColumnsOrder}
+						setColumnsOrder={setColumnsOrder}
+						resetColumnsOrder={resetColumnsOrder}
+						getColumnsActive={getColumnsActive}
+						setColumnsActive={setColumnsActive}
+						resetColumnsActive={resetColumnsActive}
 						//
 						rowTemplate={BorrowersTableRow}
 						//

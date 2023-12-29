@@ -25,19 +25,6 @@ async def read_borrowers(
     borrowers, total = await crud.get_borrowers(session, page=page, page_size=page_size, order_by=order_by, order=order, filters=filters)
     return {'results':borrowers, 'total':total, 'page':page}
 
-@app.get("/filters", response_model=schemas.BorrowerFiltersResponse)
-async def read_borrowers(
-    session: Session = Depends(get_session),
-    Authorize: AuthJWT = Depends()
-):
-    # Authorize.jwt_required()
-
-    ratings = await crud.get_filters_rating_values(session)
-    print(ratings)
-    # forecasts = await crud.get_bonds_forecasts(db)
-    # return {'ratings':ratings, 'forecasts':forecasts}
-    return {'ratings':ratings}
-
 @app.get("/id/{borrower_id}", response_model=schemas.BorrowerFull)
 async def read_borrower_by_id(
     borrower_id: int,
@@ -96,3 +83,32 @@ async def read_borrowers(
 
     history, total = await crud.get_borrowers_ratings_history(session, page=page, page_size=page_size, order_by=order_by, order=order)
     return {'results':history, 'total':total, 'page':page}
+
+
+@app.get("/filters")
+async def get_borrowers_filters(
+    session: Session = Depends(get_session),
+    Authorize: AuthJWT = Depends()
+):
+    filters = {
+        'loose_ratings': {
+            'label': 'Рейтинги ИЛИ',
+            'mode': 'bool',
+            'values': True,
+        },
+    }
+    # Authorize.jwt_required()
+
+    ratings_data = await crud.get_filters_rating_values(session)
+    if ratings_data:
+        for agency in ratings_data:
+            if ratings_data[agency]:
+                filters['rating_'+agency] = {
+                    'mode': 'select',
+                    'options': ratings_data[agency],
+                }
+
+    # forecasts = await crud.get_bonds_forecasts(db)
+    # return {'ratings':ratings, 'forecasts':forecasts}
+
+    return filters

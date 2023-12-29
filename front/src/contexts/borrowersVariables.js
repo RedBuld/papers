@@ -1,4 +1,4 @@
-export const allBorrowersColumns = {
+export const allColumns = {
 	'id': {
 		'label': '#',
 		'prefix': '',
@@ -43,7 +43,7 @@ export const allBorrowersColumns = {
 	},
 }
 
-export const allBorrowersRatingsHistoryColumns = {
+export const allRatingsHistoryColumns = {
 	'id': {
 		'label': '#',
 		'prefix': '',
@@ -89,7 +89,7 @@ export const allBorrowersRatingsHistoryColumns = {
 }
 
 
-export const groupedBorrowersColumns = {
+export const groupedColumns = {
 	'primary': {
 		'label':'Основные',
 		'columns': [
@@ -109,16 +109,23 @@ export const groupedBorrowersColumns = {
 	},
 }
 
-export const defaultBorrowersColumnsOrder = [
+export const defaultColumnsOrder = [
 	'name', 'inn', 'rating_acra', 'rating_raexpert', 'rating_nkr', 'rating_nra'
 ]
-export const defaultBorrowersColumnsActive = [
-	'name', 'inn', 'rating_acra', 'rating_raexpert', 'rating_nkr', 'rating_nra'
+export const defaultRatingsHistoryColumnsOrder = [
+	'date', 'borrower', 'agency', 'prev', 'current'
 ]
 
-export const defaultBorrowersRatingsHistoryColumnsOrder = [
+export const defaultColumnsActive = [
+	'name', 'inn', 'rating_acra', 'rating_raexpert', 'rating_nkr', 'rating_nra'
+]
+export const defaultRatingsHistoryColumnsActive = [
 	'date', 'borrower', 'agency', 'prev', 'current'
 ]
-export const defaultBorrowersRatingsHistoryColumnsActive = [
-	'date', 'borrower', 'agency', 'prev', 'current'
+
+export const defaultActiveFilters = [
+	'loose_ratings', 'rating_acra', 'rating_raexpert', 'rating_nkr', 'rating_nra', 'status'
+]
+export const immutableActiveFilters = [
+	'loose_ratings', 'rating_acra', 'rating_raexpert', 'rating_nkr', 'rating_nra', 'status'
 ]

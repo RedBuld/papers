@@ -2,17 +2,18 @@ import React, { useState, useEffect } from 'react'
 import { API } from '../../api/api'
 import Table from '../tables/table'
 import BorrowersRatingsHistoryTableRow from './borrowersRatingsHistoryTableRow'
-import { allBorrowersRatingsHistoryColumns as dataColumns, defaultBorrowersRatingsHistoryColumnsOrder, defaultBorrowersRatingsHistoryColumnsActive } from '../../contexts/borrowersVariables'
+import {
+	allRatingsHistoryColumns as dataColumns,
+	defaultRatingsHistoryColumnsOrder as columnsOrder,
+	defaultRatingsHistoryColumnsActive as columnsActive
+} from '../../contexts/borrowersVariables'
 
 // defaultBorrowersRatingsHistoryOrder
 // defaultBorrowersRatingsHistoryActive
 
 function BorrowersRatingsHistoryTable(props)
 {
-	const {
-		pageSize=50,
-		usePagination
-	} = props
+	const usePagination = props?.usePagination ?? true
 
 	let agency_labels = {
         'acra': 'Акра',
@@ -20,39 +21,41 @@ function BorrowersRatingsHistoryTable(props)
         'nkr': 'НКР',
         'nra': 'НРА'
     }
-
-	const [_trigger, setTrigger] = useState(performance.now())
+	
+	const [loading, setLoading] = useState(true)
+	const [initialLoading, setInitialLoading] = useState(true)
 
 	const [data, setData] = useState([])
-	const [dataCurrentPage, setDataCurrentPage] = useState(1)
-	const [dataTotalPages, setDataTotalPages] = useState(0)
-	const [dataOrdering, setDataOrdering] = useState({'order_by':'date', 'order':'desc'})
-	const [dataPageSize, setDataPageSize] = useState(pageSize)
-	const [dataLoading, setDataLoading] = useState(true)
-	const [dataInitialLoading, setDataInitialLoading] = useState(true)
-    const [dataColumnsOrder] = useState(defaultBorrowersRatingsHistoryColumnsOrder)
-    const [dataColumnsActive] = useState(defaultBorrowersRatingsHistoryColumnsActive)
+	const [ordering, _setOrdering] = useState({'order_by':'date', 'order':'desc'})
 
-	const setPage = (_page) => {
-		!dataLoading && setDataCurrentPage(_page)
+	// PAGINATION
+	const [pageSize, setPageSize] = useState(50)
+	const [totalPages, setTotalPages] = useState(0)
+	const [currentPage, setCurrentPage] = useState(1)
+
+
+	function setPage(_page)
+	{
+		!loading && setCurrentPage(_page)
 	}
 
-	const setOrdering = (key) => {
-		let _order = key === dataOrdering['order_by'] && dataOrdering['order'] === "asc" ? "desc" : "asc"
-		setDataOrdering({'order_by':key, 'order':_order})
+	function setOrdering(key)
+	{
+		let _order = key === ordering['order_by'] && ordering['order'] === "asc" ? "desc" : "asc"
+		_setOrdering({'order_by':key, 'order':_order})
 	}
 
-	const getData = async () => {
-		setDataLoading(true)
-		let url = `/borrowers/history/`
+	const loadData = async () => {
+		setLoading(true)
+		let url = '/borrowers/history/'
 		let _args = []
 		if(usePagination)
 		{
-			_args.push(`page=${dataCurrentPage}`)
-			_args.push(`page_size=${dataPageSize}`)
+			_args.push(`page=${currentPage}`)
+			_args.push(`page_size=${pageSize}`)
 		}
-		_args.push(`order=${dataOrdering['order']}`)
-		_args.push(`order_by=${dataOrdering['order_by']}`)
+		_args.push(`order=${ordering['order']}`)
+		_args.push(`order_by=${ordering['order_by']}`)
 
 		let args = _args.join('&')
 		if( args.length > 0 )
@@ -63,27 +66,23 @@ function BorrowersRatingsHistoryTable(props)
 		if( response.status === 200 )
 		{
 			setData(response.data.results)
-			setDataCurrentPage(response.data.total < response.data.page ? response.data.total : response.data.page)
-            setDataTotalPages(response.data.total)
+			setCurrentPage(response.data.total < response.data.page ? response.data.total : response.data.page)
+            setTotalPages(response.data.total)
 		}
-		setDataLoading(false)
-		setDataInitialLoading(false)
-	}
-
-	const refresh = async () => {
-		setTrigger(performance.now())
+		setLoading(false)
+		setInitialLoading(false)
 	}
 
 	useEffect(() => {
-		getData()
+		loadData()
 		// eslint-disable-next-line react-hooks/exhaustive-deps
-	}, [dataCurrentPage,dataOrdering,dataPageSize,dataColumnsActive,_trigger])
+	}, [ordering,currentPage,pageSize])
 
 	useEffect(() => {
-		window.addEventListener('refreshBorrowers', refresh)
-		return () => {
-			window.removeEventListener('refreshBorrowers', refresh)
-		}
+		// window.addEventListener('refreshBorrowers', refresh)
+		// return () => {
+		// 	window.removeEventListener('refreshBorrowers', refresh)
+		// }
 		// eslint-disable-next-line react-hooks/exhaustive-deps
 	}, [])
 
@@ -92,24 +91,24 @@ function BorrowersRatingsHistoryTable(props)
 			<div className="flow-root min-w-full">
 				<div className="align-middle py-2  max-w-full inline-block">
 					<Table
-						initialLoading={dataInitialLoading}
+						initialLoading={initialLoading}
 						usePagination={usePagination}
 						useColumnsConfigurator={false}
 						useAdditionalColumn={false}
 						//
 						columns={dataColumns}
-						columnsOrder={dataColumnsOrder}
-						columnsActive={dataColumnsActive}
+						columnsOrder={columnsOrder}
+						columnsActive={columnsActive}
 						//
-						order={dataOrdering['order']}
-						orderBy={dataOrdering['order_by']}
-						pageSize={dataPageSize}
-						currentPage={dataCurrentPage}
-						totalPages={dataTotalPages}
+						order={ordering['order']}
+						orderBy={ordering['order_by']}
+						pageSize={pageSize}
+						totalPages={totalPages}
+						currentPage={currentPage}
 						//
 						setOrdering={setOrdering}
 						setPage={setPage}
-						setPageSize={setDataPageSize}
+						setPageSize={setPageSize}
 						//
 						rowTemplate={BorrowersRatingsHistoryTableRow}
 						//

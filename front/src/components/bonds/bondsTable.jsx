@@ -1,8 +1,4 @@
 import React, { useState, useEffect } from 'react'
-import { API } from '../../api/api'
-import Filters from '../filters/filters'
-import Table from '../tables/table'
-import BondsTableRow from './bondsTableRow'
 import {
 	allColumns,
 	groupedColumns,
@@ -13,10 +9,13 @@ import {
 	GetColumnsActive, SetColumnsActive, ResetColumnsActive,
 	GetActiveFilters, SetActiveFilters, ResetActiveFilters
 } from '../../contexts/bonds'
+import { API } from '../../api/api'
+import Filters from '../filters/filters'
+import Table from '../tables/table'
+import BondsTableRow from './bondsTableRow'
 
 function BondsTable(props)
 {
-	
 	const useFilters = props?.useFilters ?? true
 	const usePagination = props?.usePagination ?? true
 	const useDelta = props?.useDelta ?? false
@@ -144,7 +143,7 @@ function BondsTable(props)
 			const filter_data = filtersAll[filter_key] ?? null
 			const filter_value = filtersValues[filter_key] ?? null
 
-			if( !filter_data || !filter_value )
+			if( !filter_data )
 			{
 				continue
 			}
@@ -217,7 +216,6 @@ function BondsTable(props)
 	}, [currentPage,ordering,pageSize,filtersValues])
 
 	useEffect(() => {
-
 		// window.addEventListener('refreshBonds', loadBonds)
 		// return () => {
 		// 	window.removeEventListener('refreshBonds', loadBonds)
@@ -299,11 +297,11 @@ function BondsTable(props)
 						rowTemplate={BondsTableRow}
 						//
 						columnsKey={data_key}
-						isPublic={isPublic}
 						rows={bonds}
+						max_index={bonds.length}
 						// 
 						delta={delta}
-						max_index={bonds.length}
+						isPublic={isPublic}
 						delta_dur={delta_dur}
 						addToFolders={addToFolders}
 						removeFromFolder={removeFromFolder}

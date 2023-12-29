@@ -36,11 +36,14 @@ function Filters(props)
 					'mode': response.data[key].mode,
                     'options': response.data[key].options
 				}
-                values[key] = filtersValues[key] ?? ( response.data[key].values ?? null )
+                if( filtersValues[key] || response.data[key].values )
+                {
+                    values[key] = filtersValues[key] ?? response.data[key].values
+                }
 			}
 
             setFiltersAll( all )
-            setFiltersValues( { ...filtersValues, values } )
+            setFiltersValues( { ...filtersValues, ...values } )
             setFiltersLoaded(true)
 		}
 	}
@@ -90,7 +93,7 @@ function Filters(props)
                                 key={filter_key}
                                 label={filter_data.label}
                                 value={filtersValues[filter_key]}
-                                setValue={ (val) => { setFiltersValues({ ...filtersValues, [filter_key]:val }) }}
+                                setValue={ (val) => { setFiltersValues( (prev) => ({ ...prev, [filter_key]:val }) ) }}
                             />
                         )
                     }
@@ -102,7 +105,7 @@ function Filters(props)
                                 label={filter_data.label}
                                 options={filter_data.options}
                                 values={filtersValues[filter_key]}
-                                setValue={ (val) => { setFiltersValues({ ...filtersValues, [filter_key]:val }) }}
+                                setValue={ (val) => { setFiltersValues( (prev) => ({ ...prev, [filter_key]:val }) ) }}
                             />
                         )
                     }
@@ -114,7 +117,7 @@ function Filters(props)
                                 label={filter_data.label}
                                 options={filter_data.options}
                                 values={filtersValues[filter_key]}
-                                setValue={ (val) => { setFiltersValues({ ...filtersValues, [filter_key]:val }) }}
+                                setValue={ (val) => { setFiltersValues( (prev) => ({ ...prev, [filter_key]:val }) ) }}
                             />
                         )
                     }
@@ -126,7 +129,7 @@ function Filters(props)
                                 label={filter_data.label}
                                 options={filter_data.options}
                                 values={filtersValues[filter_key]}
-                                setValue={ (val) => { setFiltersValues({ ...filtersValues, [filter_key]:val }) }}
+                                setValue={ (val) => { setFiltersValues( (prev) => ({ ...prev, [filter_key]:val }) ) }}
                             />
                         )
                     }
@@ -135,7 +138,7 @@ function Filters(props)
             }) }
             <Search
                 value={filtersValues['search']}
-                setValue={ (val) => { setFiltersValues({ ...filtersValues, 'search':val }) }}
+                setValue={ (val) => { setFiltersValues( (prev) => ({ ...prev, 'search':val }) ) }}
             />
         </div>
     ) : <></>

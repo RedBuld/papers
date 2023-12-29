@@ -528,6 +528,7 @@ export const groupedColumns = {
 		],
 	},
 }
+
 export const defaultColumnsOrder = [
 	'id', 'isin', 'name', 'short', 'status', 'dist_date_start', 'dist_date_end', 'maturity_date', 'offer_date', 'closest_date', 'coupon_date', 'coupon_percent', 'coupon_value', 'coupon_period', 'coupon_percent_relative', 'coupons_per_year', 'buyback_date', 'buyback_price', 'nkd', 'dolg', 'board_id', 'market_code', 'instr_id', 'currency', 'currency_support', 'issue_size', 'issue_size_placed', 'listing_level', 'bond_type', 'lot_size', 'lot_value', 'duration', 'liquidity_month_qty', 'liquidity_month_sum', 'liquidity_week_qty', 'liquidity_week_sum', 'liquidity_day_qty', 'liquidity_day_sum', 'yields', 'last_price', 'price_med', 'spike', 'spike_prcnt', 'spread', 'bonus', 'bonus_dur', 'rating_acra', 'rating_raexpert', 'rating_nkr', 'rating_nra', 'medbonus', 'delta', 'medbonus_dur', 'delta_dur'
 ]
@@ -547,9 +548,11 @@ export const defaultFreshColumnsActive = [
 export const defaultComingColumnsActive = [
 	'isin', 'name', 'status', 'dist_date_start', 'maturity_date', 'total_sum', 'rating_acra', 'rating_raexpert', 'rating_nkr', 'rating_nra',
 ]
+
 export const roundedValueColumns = [
 	'medbonus', 'medbonus_dur', 'delta', 'delta_dur', 'bonus', 'bonus_dur', 'coupon_percent_relative', 'buyback_price', 'yields', 'last_price', 'price_med', 'spike', 'spike_prcnt', 'spread'
 ]
+
 export const defaultActiveFilters = [
 	'loose_ratings', 'rating_acra', 'rating_raexpert', 'rating_nkr', 'rating_nra', 'status'
 ]
