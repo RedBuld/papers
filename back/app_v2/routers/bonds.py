@@ -127,7 +127,7 @@ async def get_bonds_filters(
         }
     }
 
-    ratings_data = await crud.get_filters_rating_values(session)
+    ratings_data = await crud.get_filters_bonds_ratings(session)
     if ratings_data:
         for agency in ratings_data:
             if ratings_data[agency]:

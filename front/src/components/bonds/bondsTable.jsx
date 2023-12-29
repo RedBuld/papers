@@ -138,7 +138,7 @@ function BondsTable(props)
 			data['fresh'] = OptsFresh
 		}
 
-		for( const filter_key of Object.keys(filtersActive) )
+		for( const filter_key of filtersActive )
 		{
 			const filter_data = filtersAll[filter_key] ?? null
 			const filter_value = filtersValues[filter_key] ?? null
@@ -150,26 +150,26 @@ function BondsTable(props)
 			
 			let add = false
 
-			if( filter_data[filter_key].mode === 'bool' )
+			if( filter_data.mode === 'bool' )
 			{
 				add = true
 			}
-			if( filter_data[filter_key].mode === 'select' && filter_value && filter_value.length>0 )
+			if( filter_data.mode === 'select' && filter_value && filter_value.length>0 )
 			{
 				add = true
 			}
-			if( filter_data[filter_key].mode === 'range' && filter_value && ( filter_value.min !== '' || filter_value.max !== '' ) )
+			if( filter_data.mode === 'range' && filter_value && ( filter_value.min !== '' || filter_value.max !== '' ) )
 			{
 				add = true
 			}
-			if( filter_data[filter_key].mode === 'date-range' && filter_value && ( filter_value.min !== '' || filter_value.max !== '' ) )
+			if( filter_data.mode === 'date-range' && filter_value && ( filter_value.min !== '' || filter_value.max !== '' ) )
 			{
 				add = true
 			}
 
 			if( add )
 			{
-				filter_data[filter_key] = filter_value
+				data[filter_key] = filter_value
 			}
 		}
 

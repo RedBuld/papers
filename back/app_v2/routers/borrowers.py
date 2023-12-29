@@ -12,15 +12,20 @@ app = APIRouter(
 
 @app.post("/", response_model=schemas.BorrowersCountedResult)
 async def read_borrowers(
+    request: Request,
     page: int = 1,
-    page_size: int = 100,
-    order_by: str | None = "id",
+    page_size: int = 20,
     order: str | None = "asc",
-    filters: schemas.BorrowerFiltersRequest | None = {},
+    order_by: str | None = "id",
     session: Session = Depends(get_session),
     Authorize: AuthJWT = Depends()
 ):
     # Authorize.jwt_required()
+
+    if page and page < 1:
+        page = 1
+
+    filters = await request.json()
 
     borrowers, total = await crud.get_borrowers(session, page=page, page_size=page_size, order_by=order_by, order=order, filters=filters)
     return {'results':borrowers, 'total':total, 'page':page}
@@ -99,7 +104,7 @@ async def get_borrowers_filters(
     }
     # Authorize.jwt_required()
 
-    ratings_data = await crud.get_filters_rating_values(session)
+    ratings_data = await crud.get_filters_borrowers_ratings(session)
     if ratings_data:
         for agency in ratings_data:
             if ratings_data[agency]:

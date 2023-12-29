@@ -6,7 +6,7 @@ from sqlalchemy.orm import sessionmaker
 from app_v2 import models
 from app_v2 import schemas
 
-async def get_filters_rating_values(
+async def get_filters_bonds_ratings(
     session_maker: sessionmaker
 ) -> dict[str,str]:
 
@@ -121,3 +121,32 @@ async def get_filters_bonds_attributes(
         except:
             _res[ _map[0] ]['options'][ _map[1] ] = ''
     return _res
+
+
+async def get_filters_borrowers_ratings(
+    session_maker: sessionmaker
+) -> dict[str,str]:
+
+    result = {}
+
+    with session_maker() as session:
+        for agency in ['acra','raexpert','nkr','nra']:
+
+            ratings_statement = \
+                select( distinct(models.BorrowerRating.value) )\
+                .where(
+                    models.BorrowerRating.agency==agency
+                )\
+                .order_by( models.BorrowerRating.value.asc() )
+
+            ratings_query = session.execute(ratings_statement)
+            ratings = ratings_query.scalars().all()
+
+            result[agency] = []
+
+            for rating in ratings:
+                result[agency].append( rating )
+        
+        session.close()
+
+    return result

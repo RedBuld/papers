@@ -45,8 +45,8 @@ async def get_all_nonrated_bonds(
 
 async def get_bonds(
     session_maker: sessionmaker,
-    page: int | None = None,
-    page_size: int | None = None,
+    page: int | None = 1,
+    page_size: int | None = 50,
     order_by: str | None = "id",
     order: str | None = "asc",
     filters: dict[str,Any] | None = {}
@@ -78,7 +78,7 @@ async def get_bonds(
 
     rating_filter_mode = or_ if loose_ratings == True else and_
     
-    composite_aliases = {}
+    composite_aliases: dict[str, models.BondCompositeRating] = {}
     rating_filters = []
 
     composite_alias_filter = aliased(models.BondCompositeRating, name='composite_alias_filter_base')
@@ -122,7 +122,6 @@ async def get_bonds(
             .where(models.Bond.borrower_id==static_filter_borrower_id)
     ### STATIC FILTERS ###
 
-    
     for key in filters:
         # filters for rating
         if key.startswith('rating_'):
