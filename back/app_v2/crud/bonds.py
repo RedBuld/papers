@@ -214,9 +214,7 @@ async def get_bonds(
     try:
         pages = math.ceil(total / page_size)
     except:
-        pages = 1
-    if pages < 1:
-        pages = 1
+        pages = 0
 
     return result, pages
 

@@ -177,3 +177,15 @@ export async function GetAll(query, payload)
             return Promise.reject(err)
         } )
 }
+
+export async function GetTop(query)
+{
+    return API
+        .get( `/bonds/top?${query}` )
+        .then( (response) => {
+            return Promise.resolve(response.data)
+        } )
+        .catch( (err) => {
+            return Promise.reject(err)
+        } )
+}

@@ -2,12 +2,12 @@ import React, { useEffect, useState, useMemo } from "react";
 
 function Pagination(props)
 {
-    const { pagination, setPage, setPageSize } = props
+    const { currentPage, totalPages, pageSize, setPage, setPageSize } = props
     
     const [endSize, setEndSize] = useState( 0 )
     
-    const canPrev = pagination.current > 1
-    const canNext = pagination.current < pagination.total
+    const canPrev = currentPage > 1
+    const canNext = currentPage < totalPages
     const midSize = 2
 
     let dots = false
@@ -15,16 +15,16 @@ function Pagination(props)
     const links = () => {
         let page_links = []
         
-        for ( let index = 1; index <= pagination.total; index++ )
+        for ( let index = 1; index <= totalPages; index++ )
         {
-            if ( index === pagination.current )
+            if ( index === currentPage )
             {
                 page_links.push( <button key={index+''} className="inline-flex items-center border-t-2 border-indigo-500 px-4 py-4 text-sm font-medium text-indigo-600">{index+''}</button> )
 				dots = true
             }
             else
             {
-                if ( index <= endSize || ( pagination.current && (index >= (pagination.current - midSize)) && (index <= (pagination.current + midSize)) ) || (index > (pagination.total - endSize)) )
+                if ( index <= endSize || ( currentPage && (index >= (currentPage - midSize)) && (index <= (currentPage + midSize)) ) || (index > (totalPages - endSize)) )
                 {
                     page_links.push( <button key={index+''} onClick={() => setPage(index)} className="inline-flex items-center border-t-2 border-transparent px-4 py-4 text-sm font-medium text-gray-500 hover:border-gray-300 hover:text-gray-700">{index+''}</button> )
                     dots = true
@@ -40,11 +40,13 @@ function Pagination(props)
     }
 
     const PrevPage = () => {
-        canPrev && setPage(pagination.current-1)
+        console.log('PrevPage')
+        canPrev && setPage(currentPage-1)
     }
 
     const NextPage = () => {
-        canNext && setPage(pagination.current+1)
+        console.log('NextPage')
+        canNext && setPage(currentPage+1)
     }
 
     const changeEndSize = () => {
@@ -54,7 +56,7 @@ function Pagination(props)
 	const memoedPagination = useMemo(
 		() => links(),
 		// eslint-disable-next-line react-hooks/exhaustive-deps
-		[endSize,pagination]
+		[endSize,currentPage,totalPages]
 	)
 
     useEffect(() => {
@@ -65,11 +67,11 @@ function Pagination(props)
         }
     }, [])
 
-    return (
+    return (totalPages > 0) && (
         <nav className="flex flex-row flex-wrap px-4">
-            { pagination.size && (
+            { pageSize && (
             <div className="flex w-1/3 md:w-16 md:mr-3 order-2 md:order-none justify-center md:justify-start">
-                <select value={pagination.size} onChange={ (ev) => { setPageSize(ev.target.value) } }>
+                <select value={pageSize} onChange={ (ev) => { setPageSize(ev.target.value) } }>
                     <option value="20">20</option>
                     <option value="50">50</option>
                     <option value="100">100</option>

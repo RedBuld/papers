@@ -54,7 +54,7 @@ function BorrowersTableRow(props)
 	}
 
     return (
-        <tr key={borrower.id} className="hover:bg-slate-200 group">
+        <a href={`/borrowers/${borrower.id}`} key={borrower.id} className="table-row hover:bg-slate-200 group">
             {columnsOrder.map((column_key) => {
                 if( !(columnsActive.indexOf(column_key) > -1) || !(column_key in columns) || (columnsSkip.indexOf(column_key) > -1) )
                 {
@@ -76,7 +76,7 @@ function BorrowersTableRow(props)
             { useColumnsConfigurator && (
             <td className={"w-0 text-gray-900 font-medium text-sm text-center " + (compact.value ? "px-3 py-0" : "px-6 py-3") }></td>
             ) }
-        </tr>
+        </a>
     )
 }
 

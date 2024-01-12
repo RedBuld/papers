@@ -1,9 +1,10 @@
 import React from 'react'
 import TableLoadingPlaceholder from './tableLoadingPlaceholder'
+import DeltaTableRow from './deltaTableRow'
 
 function TableBody(props)
 {
-    const { columnsActive, useColumnsConfigurator=true, useAdditionalColumn=true, pagination, rows=[], rowTemplate, initialLoading } = props
+    const { columnsActive, useDelta=false, useColumnsConfigurator=true, useAdditionalColumn=true, pageSize, rows=[], rowTemplate, initialLoading } = props
 
     function skeleton_columns(columns_length)
     {
@@ -19,18 +20,25 @@ function TableBody(props)
     {
         const columns = skeleton_columns(columnsActive.length + ( (useColumnsConfigurator || useAdditionalColumn) ? 1 : 0 ) )
         let _rows = []
-        for ( let index = 1; index <= pagination.size; index++ )
+        for ( let index = 1; index <= pageSize; index++ )
         {
             _rows.push(<tr key={index} className="hover:bg-slate-200">{columns}</tr>)
         }
         return _rows
     }
 
-    return (
+    return initialLoading ? (
         <tbody className="bg-white divide-y divide-slate-300 rounded-b-lg">
-            { initialLoading ? skeleton_rows() : rows.map( (row,row_index) => { return React.createElement( rowTemplate, {...props, 'row':row, 'row_index':row_index, 'key':row.id } ) } ) }
+        { skeleton_rows() }
         </tbody>
-    );
+        )
+        :
+        (
+        <tbody className="bg-white divide-y divide-slate-300 rounded-b-lg">
+            { useDelta && (<DeltaTableRow {...props} />) }
+            { rows.map( (row,row_index) => { return React.createElement( rowTemplate, {...props, 'row':row, 'row_index':row_index, 'key':row.id }) } ) }
+        </tbody>
+        );
 }
 
 export default TableBody

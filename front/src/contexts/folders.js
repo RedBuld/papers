@@ -2,12 +2,11 @@ import { effect, signal } from "@preact/signals-react"
 import { API } from '../api/api'
 import { isLoggedIn } from './auth'
 
-const updateTrigger = signal( Date.now() )
 export const personalFolders = signal( [] )
 
-function updateTimestamp() {
-    updateTrigger.value = Date.now()
-}
+effect( () => {
+    loadPrivateFolders()
+}, [isLoggedIn])
 
 async function loadPrivateFolders()
 {
@@ -26,10 +25,6 @@ async function loadPrivateFolders()
         personalFolders.value = []
     }
 }
-
-effect( () => {
-    loadPrivateFolders()
-}, [updateTrigger,isLoggedIn])
 
 export async function GetAll()
 {
@@ -72,7 +67,7 @@ export async function Create(payload)
     return API
         .post( '/folders/', payload )
         .then( (response) => {
-            updateTimestamp()
+            loadPrivateFolders()
             return Promise.resolve(response.data)
         } )
         .catch( (err) => {
@@ -85,7 +80,7 @@ export async function Update(id,payload)
     return API
         .post( `/folders/folder/${id}`, payload )
         .then( (response) => {
-            updateTimestamp()
+            loadPrivateFolders()
             return Promise.resolve(response.data)
         } )
         .catch( (err) => {
@@ -98,7 +93,7 @@ export async function Delete(id)
     return API
         .delete( `/folders/folder/${id}` )
         .then( (response) => {
-            updateTimestamp()
+            loadPrivateFolders()
             return Promise.resolve(response.data)
         } )
         .catch( (err) => {
@@ -111,7 +106,7 @@ export async function AddBond(folder_id, bond_id)
     return API
         .post( `/folders/folder/${folder_id}/bonds/${bond_id}` )
         .then( (response) => {
-            updateTimestamp()
+            loadPrivateFolders()
             return Promise.resolve(response.data)
         } )
         .catch( (err) => {
@@ -124,7 +119,7 @@ export async function DeleteBond(folder_id, bond_id)
     return API
         .delete( `/folders/folder/${folder_id}/bonds/${bond_id}` )
         .then( (response) => {
-            updateTimestamp()
+            loadPrivateFolders()
             return Promise.resolve(response.data)
         } )
         .catch( (err) => {
@@ -137,7 +132,7 @@ export async function BatchAddBonds(bond_id, folders)
     return API
         .post( `/folders/batch/${bond_id}`, folders )
         .then( (response) => {
-            updateTimestamp()
+            loadPrivateFolders()
             return Promise.resolve(response.data)
         } )
         .catch( (err) => {

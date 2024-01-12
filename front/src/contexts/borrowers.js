@@ -1,3 +1,4 @@
+import { API } from '../api/api'
 import {
     defaultColumnsActive,
     defaultColumnsOrder,
@@ -92,4 +93,28 @@ export const SetColumnsOrder = (order) => {
 
 export const ResetColumnsOrder = () => {
     return SetColumnsOrder(defaultColumnsOrder)
+}
+
+export async function GetAll(query, payload)
+{
+    return API
+        .post( `/borrowers/?${query}`, payload )
+        .then( (response) => {
+            return Promise.resolve(response.data)
+        } )
+        .catch( (err) => {
+            return Promise.reject(err)
+        } )
+}
+
+export async function GetHistory(query)
+{
+    return API
+        .get( `/borrowers/history/?${query}` )
+        .then( (response) => {
+            return Promise.resolve(response.data)
+        } )
+        .catch( (err) => {
+            return Promise.reject(err)
+        } )
 }

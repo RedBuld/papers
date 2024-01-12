@@ -219,6 +219,7 @@ class Folder(BaseModel):
     name: str
     bonds_ids: List[Any] | None = []
     public: bool = False
+    user_id: int
 
     class Config:
         from_attributes = True

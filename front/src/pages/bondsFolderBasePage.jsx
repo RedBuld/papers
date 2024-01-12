@@ -38,7 +38,7 @@ function BondsFolderBasePage()
 		// eslint-disable-next-line react-hooks/exhaustive-deps
     }, [])
 
-    return (
+    return (currentFolder != null) && (
         <div className="min-w-full">
             <BondsFolderEditModal
                 open={editModalOpen}
@@ -54,6 +54,7 @@ function BondsFolderBasePage()
             />
             <div className="flex flex-row justify-between items-center gap-4 mb-4 bg-white p-4 rounded-lg shadow-md shadow-gray-300">
                 <div className="inline-flex text-2xl leading-6 font-medium text-gray-800">{currentFolder?.name}</div>
+                { currentFolder?.user_id == user.value?.id && (
                 <div className="inline-flex gap-4">
                     <button onClick={ () => setEditModalOpen(true) } className="inline-flex items-center rounded-lg p-2 shadow-sm text-gray-400 hover:text-gray-600 bg-gradient-to-b from-gray-100 to-gray-200 hover:from-gray-200 hover:to-gray-300">
                         <svg className="w-5 h-5" aria-hidden="true" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20">
@@ -66,16 +67,15 @@ function BondsFolderBasePage()
                         </svg>
                     </button>
                 </div>
+                )}
             </div>
-            { (currentFolder != null) && (
             <BondsTable
-                FolderID={currentFolder.id}
+                Folder={currentFolder}
                 usePagination={true}
                 useDelta={true}
                 useColumnsConfigurator={true}
                 useAdditionalColumn={true}
             />
-            )}
         </div>
     );
 }

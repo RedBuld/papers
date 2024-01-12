@@ -1,21 +1,17 @@
 import React, { useState, useEffect } from 'react'
-import { signal } from '@preact/signals-react'
-import debounce from 'lodash.debounce'
+import {
+	useLazyEffect
+} from '../../contexts/base'
 import {
 	allRatingsHistoryColumns as dataColumns,
 	defaultRatingsHistoryColumnsOrder as columnsOrder,
 	defaultRatingsHistoryColumnsActive as columnsActive
 } from '../../contexts/borrowersVariables'
-import { API } from '../../api/api'
+import {
+	GetHistory,
+} from '../../contexts/borrowers'
 import Table from '../tables/table'
 import BorrowersRatingsHistoryTableRow from './borrowersRatingsHistoryTableRow'
-
-const prevRequestData = signal({
-	'query': '',
-	'payload': {}
-})
-const _setPrevRequestData = (val) => prevRequestData.value = val
-const setPrevRequestData = debounce( _setPrevRequestData, 500, debounce.trailing=true )
 
 function BorrowersRatingsHistoryTable(props)
 {
@@ -30,11 +26,16 @@ function BorrowersRatingsHistoryTable(props)
     }
 	
 	// DESIGN
-	const [loading, setLoading] = useState(true)
 	const [initialLoading, setInitialLoading] = useState(true)
 
 	// DATA
 	const [data, setData] = useState([])
+	const [refresh, _setRefresh] = useState(Date.now())
+
+	function setRefresh()
+	{
+		_setRefresh(Date.now())
+	}
 
 	// ORDERING
 	const [ordering, _setOrdering] = useState({'order_by':'date', 'order':'desc'})
@@ -46,86 +47,66 @@ function BorrowersRatingsHistoryTable(props)
 	}
 
 	// PAGINATION
-	const [pagination, setPagination] = useState( {'size':50, 'total':1, 'current':1} )
+	const [pageSize, setPageSize] = useState(50)
+	const [totalPages, setTotalPages] = useState(0)
+	const [currentPage, setCurrentPage] = useState(1)
 
-	function setPage(_page) { !loading && setPagination( {...pagination, 'current': _page} ) }
-	function setPageSize(_size) { setPagination( {...pagination, 'size': _size} ) }
-
-	async function calculateData()
+	async function calculateRequest()
 	{
-		setLoading(true)
-
 		let query = ''
 		let _args = []
 		let payload = {}
 		if(usePagination)
 		{
-			_args.push(`page=${pagination.current}`)
-			_args.push(`page_size=${pagination.size}`)
+			_args.push(`page=${currentPage}`)
+			_args.push(`page_size=${pageSize}`)
 		}
 		_args.push(`order=${ordering.order}`)
 		_args.push(`order_by=${ordering.order_by}`)
 
 		query = _args.join('&')
 
-		if(
-			JSON.stringify(prevRequestData.value.payload) !== JSON.stringify(payload)
-			||
-			prevRequestData.value.query !== query
-		)
-		{
-			setPrevRequestData({
-				'query': query,
-				'payload': payload,
-			})
-		}
+		loadData(query)
 	}
 
-	async function loadData()
+	async function loadData(query)
 	{
-		if( prevRequestData.value.query === '' )
+		if( query === '' )
 		{
 			return
 		}
-		await API.get('/borrowers/history/?'+prevRequestData.value.query)
-			.then( (response) => {
-				setData(response.data.results)
-				let newCurrent = response.data.total < response.data.page ? response.data.total : response.data.page
-				let newTotal = response.data.total
-				if( pagination.current != newCurrent || pagination.total != newTotal )
-				{
-					setPagination( {...pagination, 'current':newCurrent, 'total':newTotal} )
-				}
-				setLoading(false)
-				setInitialLoading(false)
+		await GetHistory(query)
+			.then( (data) => {
+				setData(data.results)
+				setCurrentPage(data.total < data.page ? data.total : data.page)
+				setTotalPages(data.results.length > 0 ? data.total : 0)
+				initialLoading && setInitialLoading(false)
 			})
 			.catch( (error) => {
 				setData([])
-				if( pagination.current != 1 || pagination.total != 1 )
-				{
-					setPagination( {...pagination, 'current':1, 'total':1} )
-				}
-				setLoading(false)
-				setInitialLoading(false)
+				setCurrentPage(1)
+				setTotalPages(0)
+				initialLoading && setInitialLoading(false)
 			})
 	}
-
-	useEffect(() => {
-		loadData()
-		// eslint-disable-next-line react-hooks/exhaustive-deps
-	}, [prevRequestData.value])
-
-	useEffect(() => {
-		calculateData()
-		// eslint-disable-next-line react-hooks/exhaustive-deps
-	}, [ordering,pagination])
 
 	useEffect(() => {
 		data.length > 0 ? localStorage.setItem( 'last_history_id', ''+data[0].id ) : localStorage.setItem( 'last_history_id', 0 )
 	}, [data])
 
+	useLazyEffect( () => {
+		calculateRequest()
+		// eslint-disable-next-line react-hooks/exhaustive-deps
+	}, [ordering,pageSize,currentPage,refresh], 500 )
+
 	useEffect(() => {
-		calculateData()
+		calculateRequest()
+		const refreshInterval = setInterval(() => {
+			setRefresh()
+		}, 60000)
+		return () => {
+			clearInterval(refreshInterval)
+		}
 		// eslint-disable-next-line react-hooks/exhaustive-deps
 	}, [])
 
@@ -145,10 +126,12 @@ function BorrowersRatingsHistoryTable(props)
 						//
 						order={ordering.order}
 						orderBy={ordering.order_by}
-						pagination={pagination}
+						pageSize={pageSize}
+						totalPages={totalPages}
+						currentPage={currentPage}
 						//
 						setOrdering={setOrdering}
-						setPage={setPage}
+						setPage={setCurrentPage}
 						setPageSize={setPageSize}
 						//
 						rowTemplate={BorrowersRatingsHistoryTableRow}

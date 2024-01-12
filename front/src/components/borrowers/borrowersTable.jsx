@@ -1,27 +1,21 @@
 import React, { useState, useEffect } from 'react'
-import { signal } from '@preact/signals-react'
-import debounce from 'lodash.debounce'
-import BorrowersTableRow from './borrowersTableRow'
+import {
+	useLazyEffect
+} from '../../contexts/base'
 import {
 	allColumns,
 	groupedColumns,
 	immutableActiveFilters
 } from '../../contexts/borrowersVariables'
 import {
+	GetAll,
 	GetColumnsOrder, SetColumnsOrder, ResetColumnsOrder,
 	GetColumnsActive, SetColumnsActive, ResetColumnsActive,
 	GetActiveFilters, SetActiveFilters, ResetActiveFilters
 } from '../../contexts/borrowers'
-import { API } from '../../api/api'
-import Filters from '../filters/filters'
 import Table from '../tables/table'
-
-const prevRequestData = signal({
-	'query': '',
-	'payload': {}
-})
-const _setPrevRequestData = (val) => prevRequestData.value = val
-const setPrevRequestData = debounce( _setPrevRequestData, 500, debounce.trailing=true )
+import Filters from '../filters/filters'
+import BorrowersTableRow from './borrowersTableRow'
 
 function BorrowersTable(props)
 {
@@ -33,11 +27,16 @@ function BorrowersTable(props)
 	const defaultSortDir = props?.defaultSortDir ?? 'asc'
 	
 	// DESIGN
-	const [loading, setLoading] = useState(true)
 	const [initialLoading, setInitialLoading] = useState(true)
 
 	// DATA
 	const [borrowers, setBorrowers] = useState([])
+	const [refresh, _setRefresh] = useState(Date.now())
+
+	function setRefresh()
+	{
+		_setRefresh(Date.now())
+	}
 
 	// ORDERING
 	const [ordering, _setOrdering] = useState({'order_by':defaultSortBy, 'order':defaultSortDir})
@@ -49,10 +48,9 @@ function BorrowersTable(props)
 	}
 
 	// PAGINATION
-	const [pagination, setPagination] = useState( {'size':50, 'total':1, 'current':1} )
-
-	function setPage(_page) { !loading && setPagination( {...pagination, 'current': _page} ) }
-	function setPageSize(_size) { setPagination( {...pagination, 'size': _size} ) }
+	const [pageSize, setPageSize] = useState(50)
+	const [totalPages, setTotalPages] = useState(0)
+	const [currentPage, setCurrentPage] = useState(1)
 
 	// FILTERS
 	const [filtersLoaded, setFiltersLoaded] = useState(false)
@@ -76,10 +74,8 @@ function BorrowersTable(props)
 	function setColumnsActive(active) { _setColumnsActive( SetColumnsActive(active) ) }
 	function resetColumnsActive() { _setColumnsActive( ResetColumnsActive() ) }
 
-	async function calculateData()
+	async function calculateRequest()
 	{
-		setLoading(true)
-
 		let query = ''
 		let payload = {}
 		let _args = []
@@ -87,8 +83,8 @@ function BorrowersTable(props)
 		// STATIG ARGS
 		if( usePagination )
 		{
-			_args.push(`page=${pagination.current}`)
-			_args.push(`page_size=${pagination.size}`)
+			_args.push(`page=${currentPage}`)
+			_args.push(`page_size=${pageSize}`)
 		}
 		_args.push(`order=${ordering.order}`)
 		_args.push(`order_by=${ordering.order_by}`)
@@ -130,60 +126,43 @@ function BorrowersTable(props)
 
 		query = _args.join('&')
 
-		if(
-			JSON.stringify(prevRequestData.value.payload) !== JSON.stringify(payload)
-			||
-			prevRequestData.value.query !== query
-		)
-		{
-			setPrevRequestData({
-				'query': query,
-				'payload': payload,
-			})
-		}
+		loadData(query,payload)
 	}
 
-	async function loadData()
+	async function loadData(query,payload)
 	{
-		if( prevRequestData.value.query === '' )
+		if( query === '' )
 		{
 			return
 		}
-		await API.post('/borrowers/?'+prevRequestData.value.query, prevRequestData.value.payload)
-			.then( (response) => {
-				setBorrowers(response.data.results)
-				let newCurrent = response.data.total < response.data.page ? response.data.total : response.data.page
-				let newTotal = response.data.total
-				if( pagination.current != newCurrent || pagination.total != newTotal )
-				{
-					setPagination( {...pagination, 'current':newCurrent, 'total':newTotal} )
-				}
-				setLoading(false)
-				setInitialLoading(false)
+		await GetAll(query, payload)
+			.then( (data) => {
+				setBorrowers(data.results)
+				setCurrentPage(data.total < data.page ? data.total : data.page)
+				setTotalPages(data.results.length > 0 ? data.total : 0)
+				initialLoading && setInitialLoading(false)
 			})
 			.catch( (error) => {
 				setBorrowers([])
-				if( pagination.current != 1 || pagination.total != 1 )
-				{
-					setPagination( {...pagination, 'current':1, 'total':1} )
-				}
-				setLoading(false)
-				setInitialLoading(false)
+				setCurrentPage(1)
+				setTotalPages(0)
+				initialLoading && setInitialLoading(false)
 			})
 	}
 
-	useEffect(() => {
-		loadData()
+	useLazyEffect( () => {
+		calculateRequest()
 		// eslint-disable-next-line react-hooks/exhaustive-deps
-	}, [prevRequestData.value])
+	}, [filtersValues,ordering,pageSize,currentPage,refresh], 500 )
 
 	useEffect(() => {
-		calculateData()
-		// eslint-disable-next-line react-hooks/exhaustive-deps
-	}, [ordering,pagination,filtersValues])
-
-	useEffect(() => {
-		calculateData()
+		calculateRequest()
+		const refreshInterval = setInterval(() => {
+			setRefresh()
+		}, 60000)
+		return () => {
+			clearInterval(refreshInterval)
+		}
 		// eslint-disable-next-line react-hooks/exhaustive-deps
 	}, [])
 
@@ -213,10 +192,12 @@ function BorrowersTable(props)
 						//
 						order={ordering.order}
 						orderBy={ordering.order_by}
-						pagination={pagination}
+						pageSize={pageSize}
+						totalPages={totalPages}
+						currentPage={currentPage}
 						//
 						setOrdering={setOrdering}
-						setPage={setPage}
+						setPage={setCurrentPage}
 						setPageSize={setPageSize}
 						getColumnsOrder={getColumnsOrder}
 						setColumnsOrder={setColumnsOrder}

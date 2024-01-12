@@ -1,20 +1,35 @@
 import React, { useState, useEffect, useMemo } from 'react'
 import { compact } from '../contexts/design'
-import { API } from '../api/api'
-import { allColumns as columns } from '../contexts/bondsVariables'
+import {
+    allColumns
+} from '../contexts/bondsVariables'
+import {
+    GetTop
+} from '../contexts/bonds'
 import BondsTableRow from '../components/bonds/bondsTableRow'
 import TableLoadingPlaceholder from '../components/tables/tableLoadingPlaceholder'
 
-function TopBondsPage()
+function BondsTopPage()
 {
+    // PARAMS
     const columnsActive = useMemo( () => ['name','isin','closest_date','_folder','yields','bonus_dur'], [] )
 
-    const [top, setTop] = useState([])
-	const [initialLoading, setInitialLoading] = useState(true)
-    const topLength = top.length-1
+    // DESIGN
+    const [initialLoading, setInitialLoading] = useState(true)
 
-    const getStepColor = (index) => {
-        let step_percent = index / topLength
+    // DATA
+    const [top, setTop] = useState([])
+	const [refresh, _setRefresh] = useState(Date.now())
+
+	function setRefresh()
+	{
+		_setRefresh(Date.now())
+	}
+
+
+    function getStepColor(index)
+    {
+        let step_percent = index / (top.length-1)
 
         let g = 0
         let r = 0
@@ -40,13 +55,17 @@ function TopBondsPage()
         return `rgba(${r},${g},${b},0.4)`
     }
 
-    const getTop = async () => {
-		const response = await API.get('/bonds/top')
-		if( response.status === 200 )
-		{
-			setTop(response.data)
-		}
-		setInitialLoading(false)
+    async function loadData()
+    {
+        await GetTop()
+            .then( (data) => {
+                setTop(data)
+                initialLoading && setInitialLoading(false)
+            })
+            .catch( (error) => {
+                setTop([])
+                initialLoading && setInitialLoading(false)
+            })
 	}
 
     function skeleton_columns(columns_length)
@@ -61,21 +80,27 @@ function TopBondsPage()
 
     const skeleton_rows = () => {
         let _rows = []
+        const columns = skeleton_columns(columnsActive.length)
         for ( let index = 1; index <= 10; index++ )
         {
-            _rows.push(<tr key={index} className="hover:bg-slate-200">{memoedColumns}</tr>)
+            _rows.push(<tr key={index} className="hover:bg-slate-200">{columns}</tr>)
         }
         return (<tbody>{_rows}</tbody>)
     }
 
-	const memoedColumns = useMemo(
-		() => skeleton_columns(columnsActive.length),
+    useEffect( () => {
+        loadData()
         // eslint-disable-next-line react-hooks/exhaustive-deps
-		[columnsActive]
-	)
+    }, [refresh])
 
     useEffect( () => {
-        getTop()
+        loadData()
+		const refreshInterval = setInterval(() => {
+			setRefresh()
+		}, 60000)
+		return () => {
+			clearInterval(refreshInterval)
+		}
         // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [])
 
@@ -90,7 +115,7 @@ function TopBondsPage()
                                     return (
                                         <th key={column_key} className={"text-gray-900 font-semibold text-sm text-left whitespace-nowrap " + (compact.value ? "px-1 py-2" : "px-3 py-3") }>
                                             <div className="flex flex-row justify-between items-center">
-                                                <span className="inline-flex">{columns[column_key].label}</span>
+                                                <span className="inline-flex">{allColumns[column_key].label}</span>
                                             </div>
                                         </th>
                                     )
@@ -105,7 +130,7 @@ function TopBondsPage()
                                             <BondsTableRow
                                                 key={bond.id}
                                                 row={bond}
-                                                columns={columns}
+                                                columns={allColumns}
                                                 columnsActive={columnsActive}
                                                 columnsOrder={columnsActive}
                                                 useAdditionalColumn={false}
@@ -126,4 +151,4 @@ function TopBondsPage()
     )
 }
 
-export default TopBondsPage
+export default BondsTopPage

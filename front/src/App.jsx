@@ -10,10 +10,11 @@ import BondsPage from './pages/bondsPage'
 import BondsFolderBasePage from './pages/bondsFolderBasePage'
 import BondsFolderUpcomingPage from './pages/bondsFolderUpcomingPage'
 import BondsFolderFreshPage from './pages/bondsFolderFreshPage'
-import TopBondsPage from './pages/topBondsPage'
+import BondsTopPage from './pages/bondsTopPage'
 import PublicFoldersPage from './pages/publicFoldersPage'
 import ChatPage from './pages/chatPage'
 import BorrowersPage from './pages/borrowersPage'
+import BorrowerPage from './pages/borrowerPage'
 import BorrowersRatingsHistoryPage from './pages/borrowersRatingsHistoryPage'
 import GcurvePage from './pages/gcurvePage'
 import FeaturesPage from './pages/featuresPage'
@@ -47,12 +48,13 @@ const App = () => {
 				<Routes>
 					<Route path="/" element={<Main />}>
 						<Route path="/" element={<BondsPage />}></Route>
-						<Route path="/top" element={<TopBondsPage />}></Route>
+						<Route path="/top" element={<BondsTopPage />}></Route>
 						<Route path="/folders/coming" element={<BondsFolderUpcomingPage />}></Route>
 						<Route path="/folders/fresh" element={<BondsFolderFreshPage />}></Route>
 						<Route path="/folders/:id" element={<BondsFolderBasePage />}></Route>
 						<Route path="/public" element={<PublicFoldersPage />}></Route>
 						<Route path="/borrowers" element={<BorrowersPage />}></Route>
+						<Route path="/borrowers/:id" element={<BorrowerPage />}></Route>
 						<Route path="/history" element={<BorrowersRatingsHistoryPage />}></Route>
 						<Route path="/gcurve" element={<GcurvePage />}></Route>
 						<Route path="/features" element={<FeaturesPage />}></Route>

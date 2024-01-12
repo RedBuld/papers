@@ -189,7 +189,7 @@ async def remove_bond_from_folder(
 @app.post("/batch/{bond_id}")
 async def add_bond_to_folders(
     bond_id: int,
-    folders_data: schemas.FoldersList,
+    folders_list: list[int],
     session: Session = Depends(get_session),
     Authorize: AuthJWT = Depends()
 ):
@@ -202,7 +202,7 @@ async def add_bond_to_folders(
     if bond is None:
         raise HTTPException(status_code=404, detail="Облигация не найдена")
 
-    for folder_id in folders_data.folders:
+    for folder_id in folders_list:
 
         folder = await crud.get_folder(session, folder_id)
 
