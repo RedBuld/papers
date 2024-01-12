@@ -330,23 +330,41 @@ class Chat(Base):
     unread_admin: Mapped[bool]                   = Column("unread_admin", Boolean, default=False)
     updated: Mapped[datetime]                    = Column("updated", DateTime, default=datetime.now)
 
-    user: Mapped[ User ]                  = relationship(
+    user: Mapped[ User ] = relationship(
         "User",
         foreign_keys=id,
         remote_side="User.id",
-        primaryjoin="Chat.id == User.id",
-    )
-    messages: Mapped[ List[ChatMessage] ] = relationship(
-        "ChatMessage",
-        foreign_keys=id,
-        remote_side="ChatMessage.chat_id",
-        primaryjoin="foreign(ChatMessage.chat_id) == Chat.id",
-        order_by="desc(ChatMessage.created)",
+        primaryjoin="foreign(Chat.id) == User.id",
+        lazy="selectin"
     )
 
     @property
-    def last_message(self):
-        return self.messages[0] if len(self.messages) > 0 else None
+    def last_message(self) -> ChatMessage | None:
+        last = None
+        with SessionFront() as session:
+            try:
+                statement = \
+                    select(ChatMessage)\
+                    .where(
+                        ChatMessage.chat_id == self.id
+                    )\
+                    .order_by(
+                        ChatMessage.created.desc()
+                    )\
+                    .limit(1)
+                
+                query = session.execute(statement)
+                last = query.scalars().one_or_none()
+            except Exception:
+                print('='*20)
+                print('='*20)
+                traceback.print_exc()
+                print('='*20)
+                print('='*20)
+                pass
+            finally:
+                session.close()
+        return last
 
 class ChatMessage(Base):
     __tablename__ = "chats_messages"

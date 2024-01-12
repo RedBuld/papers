@@ -15,8 +15,8 @@ async def get_all_bonds(
     bonds_statement = select(models.Bond)
 
     with session_maker() as session:
-        borrowers_query = session.execute(bonds_statement)
-        result = borrowers_query.scalars().all()
+        bonds_query = session.execute(bonds_statement)
+        result = bonds_query.scalars().all()
         session.expunge(result)
         session.close()
     return result
@@ -38,8 +38,8 @@ async def get_all_nonrated_bonds(
         .order_by(models.Bond.id.asc())
 
     with session_maker() as session:
-        borrowers_query = session.execute(bonds_statement)
-        result = borrowers_query.scalars().all()
+        bonds_query = session.execute(bonds_statement)
+        result = bonds_query.scalars().all()
         session.close()
     return result
 

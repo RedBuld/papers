@@ -1,9 +1,9 @@
-import React, { useMemo } from 'react'
+import React from 'react'
 import TableLoadingPlaceholder from './tableLoadingPlaceholder'
 
 function TableBody(props)
 {
-    const { columnsActive, useColumnsConfigurator=true, useAdditionalColumn=true, pageSize, rows=[], compact, rowTemplate, initialLoading } = props
+    const { columnsActive, useColumnsConfigurator=true, useAdditionalColumn=true, pagination, rows=[], rowTemplate, initialLoading } = props
 
     function skeleton_columns(columns_length)
     {
@@ -14,22 +14,17 @@ function TableBody(props)
         }
         return _columns
     }
-
+    
     function skeleton_rows()
     {
+        const columns = skeleton_columns(columnsActive.length + ( (useColumnsConfigurator || useAdditionalColumn) ? 1 : 0 ) )
         let _rows = []
-        for ( let index = 1; index <= pageSize; index++ )
+        for ( let index = 1; index <= pagination.size; index++ )
         {
-            _rows.push(<tr key={index} className="hover:bg-slate-200">{memoedColumns}</tr>)
+            _rows.push(<tr key={index} className="hover:bg-slate-200">{columns}</tr>)
         }
         return _rows
     }
-
-	const memoedColumns = useMemo(
-		() => skeleton_columns(columnsActive.length + ( (useColumnsConfigurator || useAdditionalColumn) ? 1 : 0 ) ),
-		// eslint-disable-next-line react-hooks/exhaustive-deps
-		[columnsActive,compact]
-	)
 
     return (
         <tbody className="bg-white divide-y divide-slate-300 rounded-b-lg">

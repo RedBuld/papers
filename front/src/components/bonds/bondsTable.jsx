@@ -1,21 +1,32 @@
 import React, { useState, useEffect } from 'react'
+import { signal } from '@preact/signals-react'
+import debounce from 'lodash.debounce'
 import {
 	allColumns,
 	groupedColumns,
 	immutableActiveFilters
 } from '../../contexts/bondsVariables'
 import {
+	GetAll,
 	GetColumnsOrder, SetColumnsOrder, ResetColumnsOrder,
 	GetColumnsActive, SetColumnsActive, ResetColumnsActive,
 	GetActiveFilters, SetActiveFilters, ResetActiveFilters
 } from '../../contexts/bonds'
-import { API } from '../../api/api'
 import Filters from '../filters/filters'
 import Table from '../tables/table'
 import BondsTableRow from './bondsTableRow'
+import BondsAddToFolderModal from '../modals/bondsAddToFolderModal'
+
+const prevRequestData = signal({
+	'query': '',
+	'payload': {}
+})
+const _setPrevRequestData = (val) => prevRequestData.value = val
+const setPrevRequestData = debounce( _setPrevRequestData, 500, debounce.trailing=true )
 
 function BondsTable(props)
 {
+	// PARAMS
 	const useFilters = props?.useFilters ?? true
 	const usePagination = props?.usePagination ?? true
 	const useDelta = props?.useDelta ?? false
@@ -31,111 +42,82 @@ function BondsTable(props)
 	const isPublic = props?.isPublic ?? false
 	const data_key = OptsFresh ? OptsFresh : (props?.data_key ?? 'default')
 	
+	// DESIGN
 	const [loading, setLoading] = useState(true)
 	const [initialLoading, setInitialLoading] = useState(true)
 
+	// DATA
 	const [bonds, setBonds] = useState([])
+
+	// ORDERING
 	const [ordering, _setOrdering] = useState({'order_by':OptsFresh?'dist_date_start':defaultSortBy, 'order':defaultSortDir})
-
-	// PAGINATION
-	const [pageSize, setPageSize] = useState(50)
-	const [totalPages, setTotalPages] = useState(0)
-	const [currentPage, setCurrentPage] = useState(1)
-
-	// FILTERS
-	const [filtersLoaded, setFiltersLoaded] = useState(false)
-	const [filtersActive, _setFiltersActive] = useState(getFiltersActive())
-	const [filtersAll, setFiltersAll] = useState({})
-	const [filtersValues, setFiltersValues] = useState({'search': ''})
-
-	// COLUMNS
-	const [columnsOrder, _setColumnsOrder] = useState( getColumnsOrder() )
-	const [columnsActive, _setColumnsActive] = useState( getColumnsActive() )
-
-	function getColumnsOrder()
-	{
-		return GetColumnsOrder(data_key)
-	}
-	function setColumnsOrder(order)
-	{
-		_setColumnsOrder( SetColumnsOrder(data_key,order) )
-	}
-	function resetColumnsOrder()
-	{
-		_setColumnsOrder( ResetColumnsOrder(data_key) )
-	}
-
-
-	function getColumnsActive()
-	{
-		return GetColumnsActive(data_key)
-	}
-	function setColumnsActive(active)
-	{
-		_setColumnsActive( SetColumnsActive(data_key,active) )
-	}
-	function resetColumnsActive()
-	{
-		_setColumnsActive( ResetColumnsActive(data_key) )
-	}
-
-
-	function getFiltersActive()
-	{
-		return GetActiveFilters(data_key)
-	}
-	function setFiltersActive(active)
-	{
-		_setFiltersActive( SetActiveFilters(data_key,active) )
-	}
-	function resetFiltersActive()
-	{
-		_setFiltersActive( ResetActiveFilters(data_key) )
-	}
-
-
-	function setPage(_page)
-	{
-		!loading && setCurrentPage(_page)
-	}
 
 	function setOrdering(key)
 	{
-		let _order = key === ordering['order_by'] && ordering['order'] === "asc" ? "desc" : "asc"
+		let _order = key === ordering.order_by && ordering.order === "asc" ? "desc" : "asc"
 		_setOrdering({'order_by':key, 'order':_order})
 	}
 
+	// PAGINATION
+	const [pagination, setPagination] = useState( {'size':50, 'total':1, 'current':1} )
 
-	async function loadBonds()
+	function setPage(_page) { !loading && setPagination( {...pagination, 'current': _page} ) }
+	function setPageSize(_size) { setPagination( {...pagination, 'size': _size} ) }
+
+	// FILTERS
+	const [filtersLoaded, setFiltersLoaded] = useState( false )
+	const [filtersActive, _setFiltersActive] = useState( getFiltersActive )
+	const [filtersAll, setFiltersAll] = useState( {} )
+	const [filtersValues, setFiltersValues] = useState( {'search': ''} )
+
+	function getFiltersActive() { return GetActiveFilters(data_key) }
+	function setFiltersActive(active) { _setFiltersActive( SetActiveFilters(data_key,active) ) }
+	function resetFiltersActive() { _setFiltersActive( ResetActiveFilters(data_key) ) }
+
+	// COLUMNS
+	const [columnsOrder, _setColumnsOrder] = useState( getColumnsOrder )
+	const [columnsActive, _setColumnsActive] = useState( getColumnsActive )
+
+	function getColumnsOrder() { return GetColumnsOrder(data_key) }
+	function setColumnsOrder(order) { _setColumnsOrder( SetColumnsOrder(data_key,order) ) }
+	function resetColumnsOrder() { _setColumnsOrder( ResetColumnsOrder(data_key) ) }
+
+	function getColumnsActive() { return GetColumnsActive(data_key) }
+	function setColumnsActive(active) { _setColumnsActive( SetColumnsActive(data_key,active) ) }
+	function resetColumnsActive() { _setColumnsActive( ResetColumnsActive(data_key) ) }
+
+	// ADD TO FOLDERS MODAL
+	const [addToFolderModalOpen,setAddToFolderModalOpen] = useState(null)
+
+	async function calculateData()
 	{
 		setLoading(true)
 
-		let url = '/bonds/'
 		let query = ''
-		let data = {}
+		let payload = {}
 		let _args = []
 
 		// STATIG ARGS
 		if( usePagination )
 		{
-			_args.push(`page=${currentPage}`)
-			_args.push(`page_size=${pageSize}`)
+			_args.push(`page=${pagination.current}`)
+			_args.push(`page_size=${pagination.size}`)
 		}
-		_args.push(`order=${ordering['order']}`)
-		_args.push(`order_by=${ordering['order_by']}`)
+		_args.push(`order=${ordering.order}`)
+		_args.push(`order_by=${ordering.order_by}`)
 
 		// STATIC DATA
 		if( OptsBorrowerID )
 		{
-			data['borrower_id'] = OptsBorrowerID
+			payload['borrower_id'] = OptsBorrowerID
 		}
 		if( OptsFolderID )
 		{
-			data['folder_id'] = OptsFolderID
+			payload['folder_id'] = OptsFolderID
 		}
 		if( OptsFresh )
 		{
-			data['fresh'] = OptsFresh
+			payload['fresh'] = OptsFresh
 		}
 
 		for( const filter_key of filtersActive )
@@ -169,61 +151,69 @@ function BondsTable(props)
 
 			if( add )
 			{
-				data[filter_key] = filter_value
+				payload[filter_key] = filter_value
 			}
 		}
 
 		query = _args.join('&')
-		if( query.length > 0 )
-		{
-			url = url + '?' + query
-		} 
-		const response = await API.post(url, data)
-		if( response.status === 200 )
-		{
-			setBonds(response.data.results)
-			setCurrentPage(response.data.total < response.data.page ? response.data.total : response.data.page)
-            setTotalPages(response.data.total)
-		}
-		setLoading(false)
-		setInitialLoading(false)
-	}
 
-    const addToFolders = async (folders,bond_id) => {
-		const response = await API.post(`/folders/bonds/${bond_id}`, {'folders':folders})
-		if( response.status === 200 )
+		if(
+			JSON.stringify(prevRequestData.value.payload) !== JSON.stringify(payload)
+			||
+			prevRequestData.value.query !== query
+		)
 		{
-			let _folders_refresh = new Event("refreshFolders")
-            window.dispatchEvent(_folders_refresh)
+			setPrevRequestData({
+				'query': query,
+				'payload': payload,
+			})
 		}
 	}
 
-	const removeFromFolder = async (folder_id,bond_id) => {
-		const response = await API.delete(`/folders/${folder_id}/bonds/${bond_id}`)
-		if( response.status === 200 )
+	async function loadData()
+	{
+		if( prevRequestData.value.query === '' )
 		{
-            let _bonds_refresh = new Event("refreshBonds")
-            window.dispatchEvent(_bonds_refresh)
-
-            let _folders_refresh = new Event("refreshFolders")
-            window.dispatchEvent(_folders_refresh)
+			return
 		}
+		await GetAll(prevRequestData.value.query, prevRequestData.value.payload)
+			.then( (data) => {
+				setBonds(data.results)
+				let newCurrent = data.total < data.page ? data.total : data.page
+				let newTotal = data.total
+				if( pagination.current != newCurrent || pagination.total != newTotal )
+				{
+					setPagination( {...pagination, 'current':newCurrent, 'total':newTotal} )
+				}
+				setLoading(false)
+				setInitialLoading(false)
+			})
+			.catch( (error) => {
+				setBonds([])
+				if( pagination.current != 1 || pagination.total != 1 )
+				{
+					setPagination( {...pagination, 'current':1, 'total':1} )
+				}
+				setLoading(false)
+				setInitialLoading(false)
+			})
 	}
 
 	useEffect(() => {
-		loadBonds()
+		loadData()
 		// eslint-disable-next-line react-hooks/exhaustive-deps
-	}, [currentPage,ordering,pageSize,filtersValues])
+	}, [prevRequestData.value])
 
 	useEffect(() => {
-		// window.addEventListener('refreshBonds', loadBonds)
-		// return () => {
-		// 	window.removeEventListener('refreshBonds', loadBonds)
-		// }
+		calculateData()
+		// eslint-disable-next-line react-hooks/exhaustive-deps
+	}, [pagination,ordering,filtersValues] )
+	
+	useEffect(() => {
+		calculateData()
 		// eslint-disable-next-line react-hooks/exhaustive-deps
 	}, [])
-
-
+	
     let delta = 0
     let delta_dur = 0
 	let skip_columns = []
@@ -252,9 +242,12 @@ function BondsTable(props)
         })
     }
 
-
 	return (
 		<section className="min-w-full">
+			<BondsAddToFolderModal
+				open={addToFolderModalOpen}
+				close={ () => setAddToFolderModalOpen(null) }
+			/>
 			<div className="flow-root min-w-full">
 				<div className="align-middle py-2 w-full inline-block">
 					{ useFilters && (
@@ -278,11 +271,9 @@ function BondsTable(props)
 						columnsActive={columnsActive}
 						columnsSkip={skip_columns}
 						//
-						order={ordering['order']}
-						orderBy={ordering['order_by']}
-						pageSize={pageSize}
-						totalPages={totalPages}
-						currentPage={currentPage}
+						order={ordering.order}
+						orderBy={ordering.order_by}
+						pagination={pagination}
 						//
 						setOrdering={setOrdering}
 						setPage={setPage}
@@ -295,6 +286,7 @@ function BondsTable(props)
 						resetColumnsActive={resetColumnsActive}
 						//
 						rowTemplate={BondsTableRow}
+						setAddToFolderModalOpen={setAddToFolderModalOpen}
 						//
 						columnsKey={data_key}
 						rows={bonds}
@@ -303,8 +295,6 @@ function BondsTable(props)
 						delta={delta}
 						isPublic={isPublic}
 						delta_dur={delta_dur}
-						addToFolders={addToFolders}
-						removeFromFolder={removeFromFolder}
 					/>
 				</div>
 			</div>

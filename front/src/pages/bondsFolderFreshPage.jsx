@@ -1,10 +1,17 @@
-import React, { useEffect, useState } from 'react'
-import { useParams } from 'react-router-dom'
-import { API } from '../api/api'
+import React from 'react'
+import { useNavigate } from 'react-router-dom'
+import { effect } from '@preact/signals-react'
+import { user } from '../contexts/auth'
 import BondsTable from "../components/bonds/bondsTable"
 
 function BondsFolderFreshPage()
 {
+    const navigate = useNavigate()
+
+    effect( () => {
+        user.value?.id || navigate("/")
+    }, [user])
+
     return (
         <div className="min-w-full">
             <div className="flex flex-row justify-between items-center gap-4 mb-4 bg-white p-4 rounded-lg shadow-md shadow-gray-300">

@@ -18,8 +18,8 @@ async def get_chats(
 ):
     Authorize.jwt_required()
 
-    current_user = Authorize.get_jwt_subject()
-    user = await crud.get_user(session, current_user)
+    user_id = Authorize.get_jwt_subject()
+    user = await crud.get_user_by_id(session, user_id)
 
     if user.role == 3:
         chats = await crud.get_chats(session)
@@ -35,8 +35,8 @@ async def get_chat(
 ):
     Authorize.jwt_required()
 
-    current_user = Authorize.get_jwt_subject()
-    user = await crud.get_user(session, current_user)
+    user_id = Authorize.get_jwt_subject()
+    user = await crud.get_user_by_id(session, user_id)
 
     if user.role == 3 or user.id == chat_id:
         chat = await crud.get_chat(session, chat_id=chat_id, user=user)
@@ -52,8 +52,8 @@ async def get_chat_messages(
 ):
     Authorize.jwt_required()
 
-    current_user = Authorize.get_jwt_subject()
-    user = await crud.get_user(session, current_user)
+    user_id = Authorize.get_jwt_subject()
+    user = await crud.get_user_by_id(session, user_id)
 
     if user.role == 3 or user.id == chat_id:
         messages = await crud.get_chat_messages(session, chat_id=chat_id, user=user)
@@ -61,7 +61,7 @@ async def get_chat_messages(
         raise HTTPException(status_code=403, detail="Нет доступа")
     return messages
 
-@app.post("/{chat_id}/messages")
+@app.post("/{chat_id}/messages", response_model=list[schemas.ChatMessage])
 async def new_chat_message(
     chat_id: int,
     msg: schemas.ChatNewMessage,
@@ -70,12 +70,11 @@ async def new_chat_message(
 ):
     Authorize.jwt_required()
 
-    current_user = Authorize.get_jwt_subject()
-    user = await crud.get_user(session, current_user)
+    user_id = Authorize.get_jwt_subject()
+    user = await crud.get_user_by_id(session, user_id)
 
     if user.role == 3 or user.id == chat_id:
-        message = msg.model_dump()
-        added = await crud.new_chat_message(session, chat_id=chat_id, user=user, message=message)
+        await crud.new_chat_message(session, chat_id=chat_id, user=user, message_text=msg.message)
+        return await crud.get_chat_messages(session, chat_id=chat_id, user=user)
     else:
         raise HTTPException(status_code=403, detail="Нет доступа к чату")
-    return added

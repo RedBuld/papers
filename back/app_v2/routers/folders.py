@@ -12,7 +12,7 @@ app = APIRouter(
 )
 
 @app.get("/", response_model=list[schemas.Folder])
-async def read_folders(
+async def private_folders(
     session: Session = Depends(get_session),
     Authorize: AuthJWT = Depends()
 ):
@@ -26,7 +26,7 @@ async def read_folders(
 
 @app.post("/", response_model=schemas.Folder)
 async def create_folder(
-    folder: schemas.FolderCreate,
+    folder_data: schemas.FolderCreate,
     session: Session = Depends(get_session),
     Authorize: AuthJWT = Depends()
 ):
@@ -35,88 +35,100 @@ async def create_folder(
     user_id = Authorize.get_jwt_subject()
     user = await crud.get_user_by_id(session, user_id)
 
-    db_folder = await crud.check_folder_exists(session, user_id=user.id, folder_name=folder.name)
-    if db_folder:
+    folder = await crud.check_folder_exists(session, user_id=user.id, folder_name=folder_data.name)
+
+    if folder:
         raise HTTPException(status_code=400, detail="Папка с таким названием уже существует")
 
-    db_folder = await crud.create_folder(session, user_id=user.id, folder_name=folder.name, folder_public=folder.public)
-    if not db_folder:
+    folder = await crud.create_folder(session, user_id=user.id, folder_name=folder_data.name, folder_public=folder_data.public)
+
+    if not folder:
         raise HTTPException(status_code=404, detail="Произошла ошибка")
 
-    return db_folder
+    return folder
 
-@app.get("/public/", response_model=list[schemas.Folder])
-async def read_folders(
+@app.get("/folder/public/", response_model=list[schemas.Folder])
+async def public_folders(
     session: Session = Depends(get_session),
     Authorize: AuthJWT = Depends()
 ):
     Authorize.jwt_required()
 
-    user_id = Authorize.get_jwt_subject()
-
     folders = await crud.get_folders(session, public=True)
 
     return folders
 
-@app.get("/id/{folder_id}", response_model=schemas.Folder)
+@app.get("/folder/{folder_id}", response_model=schemas.Folder)
 async def read_folder(
     folder_id: int,
     session: Session = Depends(get_session),
     Authorize: AuthJWT = Depends()
 ):
     Authorize.jwt_required()
+    user_id = Authorize.get_jwt_subject()
+    user = await crud.get_user_by_id(session, user_id)
 
     folder = await crud.get_folder(session, folder_id)
+
+    if folder is None:
+        raise HTTPException(status_code=404, detail="Папка не найдена")
+
+    if folder.public == False and folder.user_id != user.id:
+        raise HTTPException(status_code=403, detail="Папка принадлежит не вам")
+
+    return folder
+
+@app.post("/folder/{folder_id}", response_model=schemas.Folder)
+async def update_folder(
+    folder_id: int,
+    folder_data: schemas.FolderCreate,
+    session: Session = Depends(get_session),
+    Authorize: AuthJWT = Depends()
+):
+    Authorize.jwt_required()
+    user_id = Authorize.get_jwt_subject()
+    user = await crud.get_user_by_id(session, user_id)
+
+    if user.role == 1:
+        folder_data.public = False
+
+    folder = await crud.check_folder_exists(session, user_id=user.id, folder_name=folder_data.name)
+
+    if folder and folder.id != folder_id:
+        raise HTTPException(status_code=400, detail="Папка с таким названием уже существует")
+
+    folder = await crud.update_folder(session, folder_id=folder_id, folder_name=folder_data.name, folder_public=folder_data.public)
+
     if folder is None:
         raise HTTPException(status_code=404, detail="Папка не найдена")
 
     return folder
 
-@app.post("/id/{folder_id}", response_model=schemas.Folder)
-async def update_folder(
-    folder_id: int,
-    folder: schemas.FolderCreate,
-    session: Session = Depends(get_session),
-    Authorize: AuthJWT = Depends()
-):
-    Authorize.jwt_required()
 
-    user_id = Authorize.get_jwt_subject()
-    user = await crud.get_user_by_id(session, user_id)
-
-    if user.role == 1:
-        folder.public = False
-
-    db_folder = await crud.check_folder_exists(session, user_id=user.id, folder_name=folder.name)
-    if db_folder and db_folder.id != folder_id:
-        print(db_folder.id,folder_id)
-        raise HTTPException(status_code=400, detail="Папка с таким названием уже существует")
-
-    db_folder = await crud.update_folder(session, folder_id=folder_id, folder_name=folder.name, folder_public=folder.public)
-    if db_folder is None:
-        raise HTTPException(status_code=404, detail="Папка не найдена")
-
-    return db_folder
-
-@app.delete("/id/{folder_id}")
+@app.delete("/folder/{folder_id}")
 async def delete_folder(
     folder_id: int,
     session: Session = Depends(get_session),
     Authorize: AuthJWT = Depends()
 ):
     Authorize.jwt_required()
+    user_id = Authorize.get_jwt_subject()
+    user = await crud.get_user_by_id(session, user_id)
 
     folder = await crud.get_folder(session, folder_id)
-    if folder is not None:
-        await crud.delete_folder(session, folder)
 
-    user_id = Authorize.get_jwt_subject()
+    if folder is None:
+        raise HTTPException(status_code=404, detail="Папка не найдена")
+
+    if folder.user_id != user.id:
+        raise HTTPException(status_code=403, detail="Папка принадлежит не вам")
+
+    await crud.delete_folder(session, folder_id=folder.id)
 
     return True
-    # folders = await crud.get_folders(session, user_id=user_id)
-    # return folders
 
-@app.post("/{folder_id}/bonds/{bond_id}")
+
+@app.post("/folder/{folder_id}/bonds/{bond_id}")
 async def add_bond_to_folder(
     folder_id: int,
     bond_id: int,
@@ -124,22 +136,28 @@ async def add_bond_to_folder(
     Authorize: AuthJWT = Depends(),
 ):
     Authorize.jwt_required()
+    user_id = Authorize.get_jwt_subject()
+    user = await crud.get_user_by_id(session, user_id)
 
     folder = await crud.get_folder(session, folder_id)
+
     if folder is None:
         raise HTTPException(status_code=404, detail="Папка не найдена")
+
+    if folder.user_id != user.id:
+        raise HTTPException(status_code=403, detail="Папка принадлежит не вам")
+
     bond = await crud.get_bond_by_id(session, bond_id)
+
     if bond is None:
         raise HTTPException(status_code=404, detail="Облигация не найдена")
 
-    await crud.add_bond_to_folder(session, folder=folder, bond=bond)
+    await crud.add_bond_to_folder(session, folder_id=folder.id, bond_id=bond.id)
 
     return True
-    # user_id = Authorize.get_jwt_subject()
-    # folders = await crud.get_folders(session, user_id=user_id)
-    # return folders
 
-@app.delete("/{folder_id}/bonds/{bond_id}")
+
+@app.delete("/folder/{folder_id}/bonds/{bond_id}")
 async def remove_bond_from_folder(
     folder_id: int,
     bond_id: int,
@@ -147,39 +165,51 @@ async def remove_bond_from_folder(
     Authorize: AuthJWT = Depends()
 ):
     Authorize.jwt_required()
+    user_id = Authorize.get_jwt_subject()
+    user = await crud.get_user_by_id(session, user_id)
 
     folder = await crud.get_folder(session, folder_id)
+
     if folder is None:
         raise HTTPException(status_code=404, detail="Папка не найдена")
+
+    if folder.user_id != user.id:
+        raise HTTPException(status_code=403, detail="Папка принадлежит не вам")
+
     bond = await crud.get_bond_by_id(session, bond_id)
+
     if bond is None:
         raise HTTPException(status_code=404, detail="Облигация не найдена")
-    await crud.remove_bond_from_folder(session, folder=folder, bond=bond)
+
+    await crud.remove_bond_from_folder(session, folder_id=folder.id, bond_id=bond.id)
 
     return True
-    # user_id = Authorize.get_jwt_subject()
-    # folders = await crud.get_folders(session, user_id=user_id)
-    # return folders
 
-@app.post("/bonds/{bond_id}")
+
+@app.post("/batch/{bond_id}")
 async def add_bond_to_folders(
     bond_id: int,
-    folders: schemas.FoldersList,
+    folders_data: schemas.FoldersList,
     session: Session = Depends(get_session),
     Authorize: AuthJWT = Depends()
 ):
     Authorize.jwt_required()
+    user_id = Authorize.get_jwt_subject()
+    user = await crud.get_user_by_id(session, user_id)
 
     bond = await crud.get_bond_by_id(session, bond_id)
+
     if bond is None:
         raise HTTPException(status_code=404, detail="Облигация не найдена")
 
-    for folder_id in folders.folders:
+    for folder_id in folders_data.folders:
+
         folder = await crud.get_folder(session, folder_id)
-        if folder is not None:
-            await crud.add_bond_to_folder(session, folder=folder, bond=bond)
+
+        if folder is None:
+            continue
+
+        if folder.user_id == user.id:
+            await crud.add_bond_to_folder(session, folder_id=folder.id, bond_id=bond.id)
 
     return True
-    # user_id = Authorize.get_jwt_subject()
-    # folders = await crud.get_folders(session, user_id=user_id)
-    # return folders

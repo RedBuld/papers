@@ -13,6 +13,9 @@ async def get_last_borrowers_ratings_history_id(
     result = None
     ratings_statement = \
         select( models.BorrowerRatingHistory.id )\
+        .where(
+            models.BorrowerRatingHistory.date!=None
+        )\
         .order_by(
             models.BorrowerRatingHistory.date.desc(),
             models.BorrowerRatingHistory.id.desc()

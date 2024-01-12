@@ -1,8 +1,9 @@
 import math
 from typing import Any
-from sqlalchemy import func, distinct, select, exists, or_, and_
+from sqlalchemy import func, distinct, select, delete, exists, or_, and_
 from sqlalchemy.orm import aliased
 from sqlalchemy.orm import sessionmaker
+from sqlalchemy.dialects.postgresql import insert
 from app_v2 import models
 from app_v2 import schemas
 
@@ -13,27 +14,35 @@ async def get_folders(
 ) -> list[models.Folder]:
     
     result = []
-    folders_statement = select(models.Folder)
+    select_statement = \
+        select(models.Folder)
 
     if user_id:
-        folders_statement = folders_statement.where(models.Folder.user_id == user_id)
+        select_statement = select_statement\
+            .where(
+                models.Folder.user_id == user_id
+            )
 
     if public:
-        folders_statement = folders_statement.where(models.Folder.public == public)
+        select_statement = select_statement\
+            .where(
+                models.Folder.public == public
+            )
 
-    folders_statement = folders_statement\
+    select_statement = select_statement\
         .order_by(
             models.Folder.sort_index.asc(),
             models.Folder.id.asc()
         )
 
     with session_maker() as session:
-        folders_query = session.execute(folders_statement)
-        result = folders_query.scalars().all()
+        select_query = session.execute(select_statement)
+        result = select_query.scalars().all()
 
         session.close()
 
     return result
+
 
 async def get_folder(
     session_maker: sessionmaker,
@@ -41,16 +50,20 @@ async def get_folder(
 ) -> models.Folder | None:
 
     result = None
-    folders_statement = \
+    select_statement = \
         select(models.Folder)\
-        .where(models.Folder.id == folder_id)
+        .where(
+            models.Folder.id == folder_id
+        )\
+        .limit(1)
 
     with session_maker() as session:
-        folders_query = session.execute(folders_statement)
-        result = folders_query.scalars().one_or_none()
+        select_query = session.execute(select_statement)
+        result = select_query.scalars().one_or_none()
         session.close()
 
     return result
+
 
 async def check_folder_exists(
     session_maker: sessionmaker,
@@ -59,7 +72,7 @@ async def check_folder_exists(
 ) -> models.Folder | None:
 
     result = None
-    folders_statement = \
+    select_statement = \
         select(models.Folder)\
         .where(
             models.Folder.name == folder_name,
@@ -68,11 +81,12 @@ async def check_folder_exists(
         .limit(1)
 
     with session_maker() as session:
-        folders_query = session.execute(folders_statement)
-        result = folders_query.scalars().one_or_none()
+        select_query = session.execute(select_statement)
+        result = select_query.scalars().one_or_none()
         session.close()
 
     return result
+
 
 async def create_folder(
     session_maker: sessionmaker,
@@ -82,12 +96,15 @@ async def create_folder(
 ) -> models.Folder | None:
     
     folder = models.Folder( name=folder_name, public=folder_public, user_id=user_id )
+
     with session_maker() as session:
         session.add(folder)
         session.commit()
         session.refresh(folder)
         session.close()
+
     return folder
+
 
 async def update_folder(
     session_maker: sessionmaker,
@@ -101,43 +118,70 @@ async def update_folder(
     if folder:
         folder.name = folder_name
         folder.public = folder_public
+
         with session_maker() as session:
             session.add(folder)
             session.commit()
             session.refresh(folder)
             session.close()
+
     return folder
+
 
 async def delete_folder(
     session_maker: sessionmaker,
-    folder: schemas.Folder
+    folder_id: int,
 ) -> None:
-    # session.query(models.bonds_in_folders).where(models.bonds_in_folders.c.folder_id==folder.id).delete()
-    # session.delete(folder)
-    # session.commit()
+
+    with session_maker() as session:
+        delete_statement = \
+            delete(models.Folder)\
+            .where(
+                models.Folder.id == folder_id
+            )
+
+        session.execute( delete_statement )
+        session.commit()
+        session.close()
     return
 
 
 async def add_bond_to_folder(
     session_maker: sessionmaker,
-    folder: schemas.Folder,
-    bond: schemas.Bond
-):
+    folder_id: int,
+    bond_id: int
+) -> None:
 
+    with session_maker() as session:
+        insert_statement = \
+            insert(models.BondsInFolders)\
+            .values({
+                models.BondsInFolders.folder_id: folder_id,
+                models.BondsInFolders.bond_id: bond_id,
+            })\
+            .on_conflict_do_nothing()
 
-    # if bond not in folder.bonds:
-    #     folder.bonds.append(bond)
-    #     session.commit()
-    # session.refresh(folder)
-    return folder
+        session.execute( insert_statement )
+        session.commit()
+        session.close()
+    return
+
 
 async def remove_bond_from_folder(
     session_maker: sessionmaker,
-    folder: schemas.Folder,
-    bond: schemas.Bond
-):
-    # if bond in folder.bonds:
-    #     folder.bonds.remove(bond)
-    #     session.commit()
-    # session.refresh(folder)
-    return folder
+    folder_id: int,
+    bond_id: int
+) -> None:
+
+    with session_maker() as session:
+        delete_statement = \
+            delete(models.BondsInFolders)\
+            .where(
+                models.BondsInFolders.folder_id == folder_id,
+                models.BondsInFolders.bond_id == bond_id,
+            )
+
+        session.execute( delete_statement )
+        session.commit()
+        session.close()
+    return

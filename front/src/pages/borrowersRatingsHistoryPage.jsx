@@ -1,16 +1,17 @@
 import React, { useEffect } from 'react'
 import BorrowersRatingsHistoryTable from "../components/borrowers/borrowersRatingsHistoryTable"
-import { lastHistoryUnread, setLastHistoryUnread } from '../contexts/base'
+import { hasHistoryUnread, setHasHistoryUnread } from '../contexts/base'
+import { effect } from '@preact/signals-react'
 
 function BorrowersRatingsHistoryPage()
 {
-    useEffect( () => {
-        setLastHistoryUnread(false)
+    effect( () => {
+        hasHistoryUnread.value && setHasHistoryUnread(false)
         // eslint-disable-next-line react-hooks/exhaustive-deps
-    }, [lastHistoryUnread])
+    }, [hasHistoryUnread])
 
     useEffect( () => {
-        setLastHistoryUnread(false)
+        hasHistoryUnread.value && setHasHistoryUnread(false)
         // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [])
 

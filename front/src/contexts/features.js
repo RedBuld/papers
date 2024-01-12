@@ -1,4 +1,3 @@
-import { signal, effect } from "@preact/signals-react"
 import { API } from '../api/api'
 
 export async function SaveFeature(payload)

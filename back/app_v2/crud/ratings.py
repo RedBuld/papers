@@ -39,7 +39,10 @@ async def get_borrowers_ratings_history(
 ) -> tuple[ list[models.BorrowerRatingHistory], int ]:
     
     result = []
-    ratings_statement = select( models.BorrowerRatingHistory )
+    ratings_statement = select( models.BorrowerRatingHistory )\
+        .where(
+            models.BorrowerRatingHistory.date!=None
+        )\
 
     if order_by and order:
         ratings_statement = ratings_statement\
@@ -57,6 +60,12 @@ async def get_borrowers_ratings_history(
         .with_only_columns(func.count(models.BorrowerRatingHistory.id))\
         .group_by(None)\
         .order_by(None)
+    
+    ratings_statement = ratings_statement\
+        .order_by(
+            models.BorrowerRatingHistory.date.desc(),
+            models.BorrowerRatingHistory.id.desc(),
+        )
 
     if page and page_size:
         ratings_statement = ratings_statement.offset( (page-1) * page_size )

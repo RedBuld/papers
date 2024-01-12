@@ -1,4 +1,6 @@
 import React, { useState, useEffect } from 'react'
+import { signal } from '@preact/signals-react'
+import debounce from 'lodash.debounce'
 import BorrowersTableRow from './borrowersTableRow'
 import {
 	allColumns,
@@ -14,24 +16,43 @@ import { API } from '../../api/api'
 import Filters from '../filters/filters'
 import Table from '../tables/table'
 
+const prevRequestData = signal({
+	'query': '',
+	'payload': {}
+})
+const _setPrevRequestData = (val) => prevRequestData.value = val
+const setPrevRequestData = debounce( _setPrevRequestData, 500, debounce.trailing=true )
+
 function BorrowersTable(props)
 {
+	// PARAMS
 	const useFilters = props?.useFilters ?? true
 	const usePagination = props?.usePagination ?? true
 	
 	const defaultSortBy = props?.defaultSortBy ?? 'name'
 	const defaultSortDir = props?.defaultSortDir ?? 'asc'
 	
+	// DESIGN
 	const [loading, setLoading] = useState(true)
 	const [initialLoading, setInitialLoading] = useState(true)
 
+	// DATA
 	const [borrowers, setBorrowers] = useState([])
+
+	// ORDERING
 	const [ordering, _setOrdering] = useState({'order_by':defaultSortBy, 'order':defaultSortDir})
 
+	function setOrdering(key)
+	{
+		let _order = key === ordering.order_by && ordering.order === "asc" ? "desc" : "asc"
+		_setOrdering({'order_by':key, 'order':_order})
+	}
+
 	// PAGINATION
-	const [pageSize, setPageSize] = useState(50)
-	const [totalPages, setTotalPages] = useState(0)
-	const [currentPage, setCurrentPage] = useState(1)
+	const [pagination, setPagination] = useState( {'size':50, 'total':1, 'current':1} )
+
+	function setPage(_page) { !loading && setPagination( {...pagination, 'current': _page} ) }
+	function setPageSize(_size) { setPagination( {...pagination, 'size': _size} ) }
 
 	// FILTERS
 	const [filtersLoaded, setFiltersLoaded] = useState(false)
@@ -39,89 +60,43 @@ function BorrowersTable(props)
 	const [filtersAll, setFiltersAll] = useState({})
 	const [filtersValues, setFiltersValues] = useState({'search': ''})
 
+	function getFiltersActive() { return GetActiveFilters() }
+	function setFiltersActive(active) { _setFiltersActive( SetActiveFilters(active) ) }
+	function resetFiltersActive() { _setFiltersActive( ResetActiveFilters() ) }
+
 	// COLUMNS
 	const [columnsOrder, _setColumnsOrder] = useState( getColumnsOrder() )
 	const [columnsActive, _setColumnsActive] = useState( getColumnsActive() )
 
-	function getColumnsOrder()
-	{
-		return GetColumnsOrder()
-	}
-	function setColumnsOrder(order)
-	{
-		_setColumnsOrder( SetColumnsOrder(order) )
-	}
-	function resetColumnsOrder()
-	{
-		_setColumnsOrder( ResetColumnsOrder() )
-	}
+	function getColumnsOrder() { return GetColumnsOrder() }
+	function setColumnsOrder(order) { _setColumnsOrder( SetColumnsOrder(order) ) }
+	function resetColumnsOrder() { _setColumnsOrder( ResetColumnsOrder() ) }
 
+	function getColumnsActive() { return GetColumnsActive() }
+	function setColumnsActive(active) { _setColumnsActive( SetColumnsActive(active) ) }
+	function resetColumnsActive() { _setColumnsActive( ResetColumnsActive() ) }
 
-	function getColumnsActive()
-	{
-		return GetColumnsActive()
-	}
-	function setColumnsActive(active)
-	{
-		_setColumnsActive( SetColumnsActive(active) )
-	}
-	function resetColumnsActive()
-	{
-		_setColumnsActive( ResetColumnsActive() )
-	}
-
-
-	function getFiltersActive()
-	{
-		return GetActiveFilters()
-	}
-	function setFiltersActive(active)
-	{
-		_setFiltersActive( SetActiveFilters(active) )
-	}
-	function resetFiltersActive()
-	{
-		_setFiltersActive( ResetActiveFilters() )
-	}
-
-
-	function setPage(_page)
-	{
-		!loading && setCurrentPage(_page)
-	}
-
-	function setOrdering(key)
-	{
-		let _order = key === ordering['order_by'] && ordering['order'] === "asc" ? "desc" : "asc"
-		_setOrdering({'order_by':key, 'order':_order})
-	}
-
-	async function loadBorrowers()
+	async function calculateData()
 	{
 		setLoading(true)
 
-		let url = '/borrowers/'
 		let query = ''
-		let data = {}
+		let payload = {}
 		let _args = []
 
 		// STATIG ARGS
 		if( usePagination )
 		{
-			_args.push(`page=${currentPage}`)
-			_args.push(`page_size=${pageSize}`)
+			_args.push(`page=${pagination.current}`)
+			_args.push(`page_size=${pagination.size}`)
 		}
-		_args.push(`order=${ordering['order']}`)
-		_args.push(`order_by=${ordering['order_by']}`)
+		_args.push(`order=${ordering.order}`)
+		_args.push(`order_by=${ordering.order_by}`)
 
 		for( const filter_key of filtersActive )
 		{
 			const filter_data = filtersAll[filter_key] ?? null
 			const filter_value = filtersValues[filter_key] ?? null
-
-			console.log('filter_key',filter_key)
-			console.log('filter_data',filter_data)
-			console.log('filter_value',filter_value)
 
 			if( !filter_data )
 			{
@@ -149,36 +124,66 @@ function BorrowersTable(props)
 
 			if( add )
 			{
-				data[filter_key] = filter_value
+				payload[filter_key] = filter_value
 			}
 		}
 
 		query = _args.join('&')
-		if( query.length > 0 )
+
+		if(
+			JSON.stringify(prevRequestData.value.payload) !== JSON.stringify(payload)
+			||
+			prevRequestData.value.query !== query
+		)
 		{
-			url = url + '?' + query
-		} 
-		const response = await API.post(url, data)
-		if( response.status === 200 )
-		{
-			setBorrowers(response.data.results)
-			setCurrentPage(response.data.total < response.data.page ? response.data.total : response.data.page)
-            setTotalPages(response.data.total)
+			setPrevRequestData({
+				'query': query,
+				'payload': payload,
+			})
 		}
-		setLoading(false)
-		setInitialLoading(false)
+	}
+
+	async function loadData()
+	{
+		if( prevRequestData.value.query === '' )
+		{
+			return
+		}
+		await API.post('/borrowers/?'+prevRequestData.value.query, prevRequestData.value.payload)
+			.then( (response) => {
+				setBorrowers(response.data.results)
+				let newCurrent = response.data.total < response.data.page ? response.data.total : response.data.page
+				let newTotal = response.data.total
+				if( pagination.current != newCurrent || pagination.total != newTotal )
+				{
+					setPagination( {...pagination, 'current':newCurrent, 'total':newTotal} )
+				}
+				setLoading(false)
+				setInitialLoading(false)
+			})
+			.catch( (error) => {
+				setBorrowers([])
+				if( pagination.current != 1 || pagination.total != 1 )
+				{
+					setPagination( {...pagination, 'current':1, 'total':1} )
+				}
+				setLoading(false)
+				setInitialLoading(false)
+			})
 	}
 
 	useEffect(() => {
-		loadBorrowers()
+		loadData()
 		// eslint-disable-next-line react-hooks/exhaustive-deps
-	}, [ordering,currentPage,pageSize,filtersValues])
+	}, [prevRequestData.value])
 
 	useEffect(() => {
-		// window.addEventListener('refreshBorrowers', refresh)
-		// return () => {
-		// 	window.removeEventListener('refreshBorrowers', refresh)
-		// }
+		calculateData()
+		// eslint-disable-next-line react-hooks/exhaustive-deps
+	}, [ordering,pagination,filtersValues])
+
+	useEffect(() => {
+		calculateData()
 		// eslint-disable-next-line react-hooks/exhaustive-deps
 	}, [])
 
@@ -206,11 +211,9 @@ function BorrowersTable(props)
 						columnsOrder={columnsOrder}
 						columnsActive={columnsActive}
 						//
-						order={ordering['order']}
-						orderBy={ordering['order_by']}
-						pageSize={pageSize}
-						totalPages={totalPages}
-						currentPage={currentPage}
+						order={ordering.order}
+						orderBy={ordering.order_by}
+						pagination={pagination}
 						//
 						setOrdering={setOrdering}
 						setPage={setPage}

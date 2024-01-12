@@ -5,7 +5,7 @@ import Pagination from "./pagination"
 
 function Table(props)
 {
-    const { usePagination, currentPage, pageSize, totalPages, setPage, setPageSize } = props
+    const { usePagination, pagination, setPage, setPageSize } = props
 
     return (
         <div className="w-full rounded-lg shadow-sm border border-slate-200 overflow-hidden relative">
@@ -15,9 +15,9 @@ function Table(props)
                     <TableBody {...props}/>
                 </table>
             </div>
-            { usePagination && (totalPages > 1) && (
+            { (usePagination && pagination) && (
             <div className="bg-white w-full border-t border-slate-200">
-                <Pagination currentPage={currentPage} totalPages={totalPages} setPage={setPage} pageSize={pageSize} setPageSize={setPageSize} />
+                <Pagination pagination={pagination} setPage={setPage} setPageSize={setPageSize} />
             </div>
             ) }
         </div>

@@ -1,3 +1,4 @@
+import { API } from '../api/api'
 import {
     defaultColumnsActive,
     defaultComingColumnsActive,
@@ -163,4 +164,16 @@ export function ResetColumnsOrder(key)
 		default:
 			return SetColumnsOrder( key, defaultColumnsOrder )
 	}
+}
+
+export async function GetAll(query, payload)
+{
+    return API
+        .post( `/bonds/?${query}`, payload )
+        .then( (response) => {
+            return Promise.resolve(response.data)
+        } )
+        .catch( (err) => {
+            return Promise.reject(err)
+        } )
 }

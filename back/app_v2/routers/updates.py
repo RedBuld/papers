@@ -16,7 +16,7 @@ async def get_history_updates(
     session: Session = Depends(get_session),
     Authorize: AuthJWT = Depends()
 ):
-    Authorize.jwt_required()
+    # Authorize.jwt_required()
 
     last = await crud.get_last_borrowers_ratings_history_id(session)
 
@@ -27,7 +27,7 @@ async def get_features_updates(
     session: Session = Depends(get_session),
     Authorize: AuthJWT = Depends()
 ):
-    Authorize.jwt_required()
+    # Authorize.jwt_required()
 
     last = await crud.get_last_feature(session)
 

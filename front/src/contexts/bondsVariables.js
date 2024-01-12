@@ -314,7 +314,7 @@ export const allColumns = {
 	},
 	'spike': {
 		'label': 'Изменение цены последней сделки к цене последней сделки предыдущего торгового дня',
-		'short_label': 'иЦПС/птд, %',
+		'short_label': 'иЦПС/птд',
 		'prefix': '',
 		'suffix': '',
 		'sortable': true,

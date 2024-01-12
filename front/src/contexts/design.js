@@ -7,13 +7,13 @@ export const dateModes = signal( getDateModes() )
 
 effect( () => {
     localStorage.setItem( 'compact', compact.value ? 'true' : 'false' )
-} )
+}, [compact] )
 
 effect( () => {
     localStorage.setItem( 'date_modes', JSON.stringify(dateModes.value) )
-} )
+}, [dateModes] )
 
-export function getCompact()
+function getCompact()
 {
     let value = localStorage.getItem('compact')
     if(!value)
@@ -27,7 +27,7 @@ export function getCompact()
     }
 }
 
-export function getDateModes()
+function getDateModes()
 {
     let value = localStorage.getItem('date_modes')
     if(!value)

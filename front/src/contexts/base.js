@@ -1,22 +1,21 @@
-import { signal } from "@preact/signals-react"
+import { effect, signal } from "@preact/signals-react"
 import { isLoggedIn } from "./auth"
 import { API } from '../api/api'
 
-export const chatUnread = signal( 0 )
-export const lastFeatureUnread = signal( false )
-export const lastHistoryUnread = signal( false )
+export const hasChatUnread = signal( 0 )
+export const hasFeatureUnread = signal( false )
+export const hasHistoryUnread = signal( false )
 
 async function getHistoryStatus()
 {
-    console.log('getHistoryStatus')
-    if(!isLoggedIn.value) return
+    // if(!isLoggedIn.value) return
     const response = await API.get('/updates/history')
     if( response.status === 200 )
     {
         let lastHistory = localStorage.getItem('last_history_id')
         if( ''+response.data !== ''+lastHistory)
         {
-            setLastHistoryUnread(true)
+            setHasHistoryUnread(true)
         }
     }
 }
@@ -24,14 +23,14 @@ async function getHistoryStatus()
 async function getFeaturesStatus()
 {
     console.log('getFeaturesStatus')
-    if(!isLoggedIn.value) return
+    // if(!isLoggedIn.value) return
     const response = await API.get('/updates/features')
     if( response.status === 200 )
     {
-        let lastFeature = localStorage.getItem('last_features_timestamp')
+        let lastFeature = localStorage.getItem('last_feature_id')
         if( ''+response.data !== ''+lastFeature)
         {
-            setLastFeatureUnread(true)
+            setHasFeatureUnread(true)
         }
     }
 }
@@ -43,27 +42,34 @@ async function getFeedbackStatus()
     const response = await API.get('/updates/chats')
     if( response.status === 200 )
     {
-        setChatUnread(response.data)
+        setHasChatUnread(response.data)
     }
 }
 
-export function setChatUnread(value)
+export function setHasChatUnread(value)
 {
-    chatUnread.value = value
+    hasChatUnread.value = value
 }
-export function setLastFeatureUnread(value)
+export function setHasFeatureUnread(value)
 {
-    lastFeatureUnread.value = value
+    hasFeatureUnread.value = value
 }
-export function setLastHistoryUnread(value)
+export function setHasHistoryUnread(value)
 {
-    lastHistoryUnread.value = value
+    hasHistoryUnread.value = value
 }
+
+effect( () => {
+    const update_interval = setInterval(() => {
+        Promise.all([
+            getFeedbackStatus(),
+            getFeaturesStatus(),
+            getHistoryStatus()
+        ])
+    }, 60000)
+    return () => clearInterval(update_interval)
+}, [isLoggedIn])
 
 getFeedbackStatus()
 getFeaturesStatus()
 getHistoryStatus()
-
-const fb_interval = setInterval(() => getFeedbackStatus(), 60000)
-const fs_interval = setInterval(() => getFeaturesStatus(), 60000)
-const hs_interval = setInterval(() => getHistoryStatus(), 60000)

@@ -1,7 +1,6 @@
 import React, { useState, useEffect } from 'react'
 import { user } from '../../contexts/auth'
 import { Create, Update } from '../../contexts/folders'
-import { API } from '../../api/api'
 import Toggler from '../../theme/toggler'
 
 function BondsFolderForm(props)
@@ -62,30 +61,29 @@ function BondsFolderForm(props)
             'name': inputsValues.name,
             'is_public': inputsValues.is_public,
         })
-        .then( (response) => {
-            closeModal && closeModal()
-            resetForm()
-        } )
-        .catch( (error) => {
-            setError(error.response.data.detail)
-        } )
+            .then( (data) => {
+                closeModal && closeModal()
+                resetForm()
+            } )
+            .catch( (error) => {
+                setError(error.response.data.detail)
+            } )
     }
 
     async function folderUpdate()
     {
-        await Update({
-            'id': folder.id,
+        await Update(folder.id, {
             'name': inputsValues.name,
             'is_public': inputsValues.is_public,
         })
-        .then( (response) => {
-            setFolder(response.data)
-            closeModal && closeModal()
-            resetForm()
-        } )
-        .catch( (error) => {
-            setError(error.response.data.detail)
-        } )
+            .then( (data) => {
+                setFolder(data)
+                closeModal && closeModal()
+                resetForm()
+            } )
+            .catch( (error) => {
+                setError(error.response.data.detail)
+            } )
     }
 
     useEffect( () => {

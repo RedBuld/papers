@@ -1,101 +1,66 @@
-import React, { useState, useRef } from 'react'
+import React, { useState } from 'react'
 import { user } from '../contexts/auth'
-import { setLastFeatureUnread } from '../contexts/base'
-import { SaveFeature, GetFeatures } from '../contexts/features'
-import { API } from '../api/api'
+import { hasFeatureUnread, setHasFeatureUnread } from '../contexts/base'
+import { GetFeatures } from '../contexts/features'
 import { useEffect } from 'react'
+import FeaturesEditor from '../components/features/featuresEditor'
+import { effect } from '@preact/signals-react'
 
 function FeaturesPage(props)
 {
-    const editor = useRef(null)
+    const [editorOpen, setEditorOpen] = useState(false)
 
     const [features, setFeatures] = useState([])
-    const [editorLoaded, setEditorLoaded] = useState(false)
-    const [editorOpen, setEditorOpen] = useState(false)
-    const [editorInited, setEditorInited] = useState(false)
-
-    let tinymce = window.tinymce
-
-    async function initEditor()
-    {
-        if(editorInited) return
-
-        if(!editorLoaded) return loadEditor()
-
-        editor.current = tinymce.init({
-            selector: '#newfeature',
-            height: 500,
-            menubar: false,
-            base_url: 'https://oko.grampus-studio.ru/tinymce',
-            plugins: [ 'advlist', 'autolink', 'lists', 'link', 'image', 'charmap', 'searchreplace', 'insertdatetime', 'table', 'paste', 'code', 'help' ],
-            toolbar: 'undo redo | formatselect | bold italic | alignleft aligncenter alignright alignjustify | bullist numlist outdent indent | removeformat'
-        })
-        setEditorInited(true)
-        /* apiKey="0ts9mmklrfcv8bdiqy2b05ldbfvbqc1t53o0c06d45wct0eb" */
-    }
-
-    async function loadEditor()
-    {
-        if( user.value && user.value?.role === 3 && !editorLoaded )
-        {
-            const script = document.createElement("script")
-            script.src = "https://oko.grampus-studio.ru/tinymce/tinymce.min.js"
-            script.async = true
-            script.onload = () => setEditorLoaded(true)
-            
-            document.body.appendChild(script)
-        }
-    }
-
-    async function saveFeature()
-    {
-        if(!editor.current) return
-
-        let content = tinymce.activeEditor.getContent()
-
-        await SaveFeature({'text':content})
-        .then( (response) => {
-            tinymce.activeEditor.setContent('')
-            getFeatures()
-        })
-        .catch( (error) => {
-            // setError(error.response.data.detail)
-        })
-    }
 
     async function getFeatures()
     {
         await GetFeatures()
-        .then( (response) => {
-            setFeatures(response.data)
-            setLastFeatureUnread(false)
-        })
-        .catch( (error) => {
-            // setError(error.response.data.detail)
-        })
+            .then( (response) => {
+                setFeatures(response.data)
+            })
+            .catch( (error) => {
+                // setError(error.response.data.detail)
+            })
     }
+    
+    effect( () => {
+        hasFeatureUnread.value && setHasFeatureUnread(false)
+        // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, [hasFeatureUnread])
 
     useEffect( () => {
-        console.log(user.value)
+        features.length > 0 ? localStorage.setItem( 'last_feature_id', ''+features[0].id ) : localStorage.setItem( 'last_feature_id', 0 )
+    }, [features])
+
+    useEffect( () => {
         getFeatures()
-		// eslint-disable-next-line react-hooks/exhaustive-deps
+        // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [])
-
-    useEffect( () => {
-        editorOpen && initEditor()
-		// eslint-disable-next-line react-hooks/exhaustive-deps
-    }, [editorOpen,editorLoaded])
 
     return (
         <section className="min-w-full features-list space-y-6">
-            { user.value?.role === 3 && (
-            <>
-                <button className={"flex w-full justify-center mt-6 px-3 py-1.5 rounded-md shadow-sm text-sm text-white font-semibold"+(editorOpen?" bg-red-600 hover:bg-red-500":" bg-indigo-600 hover:bg-indigo-500")} onClick={() => setEditorOpen(!editorOpen)}>{(editorOpen?'Закрыть':'Добавить обновление')}</button>
-                <div className={"w-full rounded-lg shadow-sm border bg-white p-4 border-slate-200 overflow-hidden relative z-[1]"+(editorOpen?' block':' hidden')}>
-                    <textarea id="newfeature"></textarea>
-                    <button onClick={saveFeature} className="flex w-full justify-center mt-3 px-3 py-1.5 rounded-md shadow-sm text-sm text-white font-semibold bg-indigo-600 hover:bg-indigo-500">Сохранить</button>
+            <div className="flex flex-row justify-between items-center gap-4 mb-4 bg-white p-4 rounded-lg shadow-md shadow-gray-300">
+                <div className="inline-flex text-2xl leading-6 font-medium text-gray-800">Возможности и обновления</div>
+                { user.value?.role === 3 && (
+                <div className="inline-flex gap-4">
+                    <button onClick={ () => setEditorOpen(!editorOpen) } className="inline-flex items-center rounded-lg p-2 shadow-sm text-gray-400 hover:text-gray-600 bg-gradient-to-b from-gray-100 to-gray-200 hover:from-gray-200 hover:to-gray-300">
+                        { !editorOpen ? (    
+                        <svg className="w-5 h-5" aria-hidden="true" xmlns="http://www.w3.org/2000/svg" fill="currentColor" viewBox="0 0 20 20">
+                            <path d="M9.546.5a9.5 9.5 0 1 0 9.5 9.5 9.51 9.51 0 0 0-9.5-9.5ZM13.788 11h-3.242v3.242a1 1 0 1 1-2 0V11H5.304a1 1 0 0 1 0-2h3.242V5.758a1 1 0 0 1 2 0V9h3.242a1 1 0 1 1 0 2Z"/>
+                        </svg>
+                        ) : (
+                        <svg className="w-5 h-5" aria-hidden="true" xmlns="http://www.w3.org/2000/svg" fill="currentColor" viewBox="0 0 20 20">
+                            <path d="M10 .5a9.5 9.5 0 1 0 9.5 9.5A9.51 9.51 0 0 0 10 .5Zm3.707 11.793a1 1 0 1 1-1.414 1.414L10 11.414l-2.293 2.293a1 1 0 0 1-1.414-1.414L8.586 10 6.293 7.707a1 1 0 0 1 1.414-1.414L10 8.586l2.293-2.293a1 1 0 0 1 1.414 1.414L11.414 10l2.293 2.293Z"/>
+                        </svg>
+                        )}
+                    </button>
                 </div>
-            </>
+                )}
+            </div>
+            { user.value?.role === 3 && (
+            <FeaturesEditor
+                editorOpen={editorOpen}
+            />
             )}
             { features && features.map((feature) => {
                 return (

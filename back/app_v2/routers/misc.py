@@ -54,9 +54,14 @@ async def create_feature(
 ):
     Authorize.jwt_required()
 
-    await crud.create_feature(session, feature_text=feature.text)
+    user_id = Authorize.get_jwt_subject()
+    user = await crud.get_user_by_id(session, user_id)
 
-    return True
+    if user.role == 3:
+        await crud.create_feature(session, feature_text=feature.text)
+        return True
+    return False
+
 
 @app.post('/version')
 async def version():

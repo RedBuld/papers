@@ -1,15 +1,28 @@
 import React, { useEffect, useState, useRef, useMemo } from 'react'
+import { effect, signal } from '@preact/signals-react'
 import { user } from '../contexts/auth'
 import { API } from '../api/api'
+import { useNavigate } from 'react-router-dom'
+
+const inputActive = signal(false)
 
 function ChatPage()
 {
+    const navigate = useNavigate()
+
     const [allChats, setAllChats] = useState( null )
     const [activeChatID, setActiveChatID] = useState( null )
-    const [activeChat, setActiveChat] = useState( null )
     const [activeChatMessages, setActiveChatMessages] = useState([])
 
-    const [error, setError] = useState(null)
+    const [error, _setError] = useState(null)
+    const setError = async (data) => {
+
+        _setError(data)
+
+        setTimeout( () => {
+            _setError(null)
+        }, 3000)
+    }
     const [inputValue, setInputValue] = useState('')
     const [inputError, setInputError] = useState('')
     const [inputValid, setInputValid] = useState(false)
@@ -17,13 +30,16 @@ function ChatPage()
     const ref = useRef(null)
     const scrolled_after_render = useRef(false)
 
-    const activateChat = async (chatID) => {
-        scrolled_after_render.current = false
+    async function activateChat(chatID)
+    {
         setActiveChatID(chatID)
+        setActiveChatMessages([])
     }
 
-    const getChats = async () => {
-        if( user.value?.role!==3 ) return
+    async function getChats()
+    {
+        if( user.value?.role !== 3 ) return
+
         const response = await API.get('chats/')
 		if( response.status === 200 )
 		{
@@ -31,72 +47,59 @@ function ChatPage()
 		}
     }
 
-    const getChat = async () => {
+    async function getChatMessages()
+    {
         if( !activeChatID ) return
-        const response = await API.get(`chats/${activeChatID}`)
-		if( response.status === 200 )
-		{
-            setActiveChat(response.data)
-		}
-    }
 
-    const getChatMessages = async () => {
-        if( !activeChat ) return
-        const response = await API.get(`chats/${activeChat.id}/messages`)
+        const response = await API.get(`chats/${activeChatID}/messages`)
 		if( response.status === 200 )
 		{
 			setActiveChatMessages(response.data)
 		}
     }
 
-    const updateAllChatsByNew = async () => {
-        if( allChats && activeChat )
-        {
-            let chats = allChats
-            let _index = allChats.findIndex( c => c.id === activeChat.id )
-            if( _index !== -1 )
-            {
-                chats[_index] = activeChat
-            }
-            setAllChats( [...chats] )
-        }
-    }
-
-    const handleSubmit = async (e) => {
-        e.preventDefault()
+    async function handleSubmit(event)
+    {
+        event.preventDefault()
         if( inputValid && !inputError && activeChatID )
         {
             API.post(`/chats/${activeChatID}/messages`, {
                 message: inputValue,
-            }).then((resp) => {
-                if(resp.data === true)
+            }).then( (response) => {
+                if(response.data)
                 {
                     setInputValue('')
                     setInputError('')
                     setInputValid(false)
-                    getChat()
+                    scrolled_after_render.current = false
+                    setActiveChatMessages(response.data)
                 }
-            }).catch(e => {
-                setError(e.response.data.detail)
+            }).catch( (error) => {
+                setError(error.response.data.detail)
             })
         }
     }
     
-    const handleCtrlEnter = (event) => {
+    function handleCtrlEnter(event)
+    {
+        if( !inputActive.value ) return
+
         if( event.key === "Enter" && (event.metaKey || event.ctrlKey))
         {
             handleSubmit(event)
         }
     }
 
-    function handleValueChange(e) {
-        setInputValue(e.target.value)
-        setInputValid(e.target.validity.valid)
-        setInputError(e.target.validationMessage)
+    function handleValueChange(event)
+    {
+        setInputValue(event.target.value)
+        setInputValid(event.target.validity.valid)
+        setInputError(event.target.validationMessage)
     }
 
-    const scrollChatToEnd = () => {
-        if(!activeChat)
+    function scrollChatToEnd()
+    {
+        if(!activeChatID)
         {
             return
         }
@@ -110,16 +113,17 @@ function ChatPage()
         }
     }
 
-    const Chats = () => {
+    function renderChats()
+    {
         let chats = []
         allChats && allChats.map( (chat) => {
             let res = (
-                <div key={chat.id} onClick={ () => activateChat(chat.id) } className={"flex flex-col overflow-hidden relative p-4 rounded-lg rounded-md cursor-pointer" + (chat.id===activeChat?.id?' shadow-none bg-indigo-500 text-white':(chat.unread_admin?' shadow-md bg-indigo-100 text-gray-900':' shadow-md bg-white text-gray-900')) }>
+                <div key={chat.id} onClick={ () => activateChat(chat.id) } className={"flex flex-col flex-shrink-0 overflow-hidden relative p-4 rounded-lg rounded-md cursor-pointer" + (chat.id===activeChatID?' shadow-none bg-indigo-500 text-white':(chat.unread_admin?' shadow-md bg-indigo-100 text-gray-900':' shadow-md bg-white text-gray-900')) }>
                     { chat.unread_admin && (
                         <div className="absolute top-2 left-2 w-2 h-2 bg-indigo-900 rounded-full"></div>
                     )}
                     <div className="text-md text-semibold mb-2">{chat.user.email}</div>
-                    <div className={"text-xs truncate text-ellipsis overflow-hidden" + (chat.id===activeChat?.id?' text-gray-200':' text-gray-600')}>{chat.last_message.message}</div>
+                    <div className={"text-xs truncate text-ellipsis overflow-hidden" + (chat.id===activeChatID?' text-gray-200':' text-gray-600')}>{chat.last_message.message}</div>
                 </div>
             )
             chats.push( res )
@@ -128,7 +132,8 @@ function ChatPage()
         return chats
     }
 
-    const Messages = () => {
+    function renderMessages()
+    {
         let messages = []
         let last_sender = null
         activeChatMessages.map( (msg) => {
@@ -152,56 +157,61 @@ function ChatPage()
     }
 
     const memoedChats = useMemo( () => (
-        Chats()
+        renderChats()
 		// eslint-disable-next-line react-hooks/exhaustive-deps
-    ), [allChats,activeChat] )
+    ), [allChats,activeChatID] )
+
     const memoedMessages = useMemo( () => (
-        Messages()
+        renderMessages()
 		// eslint-disable-next-line react-hooks/exhaustive-deps
     ), [activeChatMessages] )
-    
-    useEffect( () => {
-        getChat()
-        // eslint-disable-next-line react-hooks/exhaustive-deps
-    }, [activeChatID])
 
     useEffect( () => {
         scrollChatToEnd()
 		// eslint-disable-next-line react-hooks/exhaustive-deps
-    }, [memoedMessages])
-    
-    useEffect(() => {
-        if( error != null)
-        {
-            const timer = setTimeout(() => setError(null), 5000)
-            return () => clearTimeout(timer)
-        }
-    }, [error])
-    
-    useEffect( () => {
-        getChatMessages()
-        updateAllChatsByNew()
-        let interval = setInterval( () => {
-            activeChat && getChatMessages()
-        }, 5000)
-        return () => clearInterval(interval)
-        // eslint-disable-next-line react-hooks/exhaustive-deps
-    }, [activeChat])
+    }, [memoedMessages] )
+
+    effect( () => {
+        user.value?.id || navigate("/")
+    }, [user])
 
     useEffect( () => {
-        getChats()
-        setActiveChatID( user.value?.role===3?null:user.value?.id )
+        getChatMessages()
+        scrolled_after_render.current = false
+        inputActive.value = activeChatID ? true : false
+
         let interval = setInterval( () => {
-            getChats()
+            activeChatID && getChatMessages()
         }, 5000)
-        return () => clearInterval(interval)
+        return () => {
+            clearInterval(interval)
+        }
+        // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, [activeChatID])
+
+    useEffect( () => {
+        let interval = null
+        if( user.value?.role===3 )
+        {
+            getChats()
+            interval = setInterval( () => {
+                getChats()
+            }, 5000)
+        }
+        else
+        {
+            setActiveChatID( user.value?.id )
+        }
+        return () => {
+            clearInterval(interval)
+        }
 		// eslint-disable-next-line react-hooks/exhaustive-deps
     }, [])
 
-    return (
-        <section className="min-w-full flex flex-row bg-white rounded-lg overflow-hidden shadow-md">
+    return user.value?.id ? (
+        <section className="min-w-full h-[90vh] flex flex-row bg-white rounded-lg overflow-hidden shadow-md">
             { allChats && (
-            <div className="flex flex-col p-5 space-y-4 w-1/5 bg-gradient-to-r from-white via-white to-gray-100 overflow-y-auto max-h-full rounded-l-lg">
+            <div className="flex flex-col p-5 space-y-4 w-1/5 bg-gradient-to-r from-white via-white to-gray-100 overflow-y-auto h-full rounded-l-lg">
                 { memoedChats }
             </div>
             )}
@@ -232,9 +242,14 @@ function ChatPage()
                         value={inputValue}
                         onChange={handleValueChange}
                         onKeyDown={handleCtrlEnter}
+                        disabled={!inputActive.value}
                         className="flex-grow bg-gray-100 p-3 rounded-lg shadow-inner outline-none focus:bg-gray-200 resize-none"
                     />
-                    <button type="submit" className="p-3 rounded-lg hover:text-indigo-500">
+                    <button
+                        type="submit"
+                        className="p-3 rounded-lg text-black hover:text-indigo-500 disabled:text-gray-600 disabled:hover:text-gray-600"
+                        disabled={!inputActive.value}
+                    >
                         <svg xmlns="http://www.w3.org/2000/svg" className="w-6 h-6 color-gray-600" viewBox="0 0 1024 1024" version="1.1">
                             <path fill="currentCOlor" d="M729.173333 469.333333L157.845333 226.496 243.52 469.333333h485.674667z m0 85.333334H243.541333L157.824 797.504 729.173333 554.666667zM45.12 163.541333c-12.352-34.986667 22.762667-67.989333 56.917333-53.482666l853.333334 362.666666c34.645333 14.72 34.645333 63.829333 0 78.549334l-853.333334 362.666666c-34.133333 14.506667-69.269333-18.474667-56.917333-53.482666L168.085333 512 45.098667 163.541333z"/>
                         </svg>
@@ -242,8 +257,7 @@ function ChatPage()
                 </form>
             </div>
         </section>
-    )
-    // return <ChatForm/>
+    ) : (<></>)
 }
 
 export default ChatPage

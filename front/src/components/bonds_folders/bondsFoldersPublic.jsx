@@ -1,7 +1,6 @@
 import React, { useState, useEffect } from 'react'
 import { compact } from '../../contexts/design'
-import { updateTrigger } from '../../contexts/folders'
-import { API } from '../../api/api'
+import { GetPublic } from '../../contexts/folders'
 //
 import BondsFoldersLoadingPlaceholder from './bondsFoldersLoadingPlaceholder'
 // 
@@ -13,26 +12,33 @@ function BondsFoldersPublic()
 	const [loading, setLoading] = useState(false)
 	const [initialLoading, setInitialLoading] = useState(true)
 
-    const getFolders = async () => {
+    const loadData = async () => {
 		setLoading(true)
-		const response = await API.get('/folders/public/')
-		if( response.status === 200 )
-		{
-			setFolders(response.data)
-		}
-		setLoading(false)
-		initialLoading && setInitialLoading(false)
+		
+        await GetPublic()
+            .then( (data) => {
+                setFolders(data)
+                setLoading(false)
+                initialLoading && setInitialLoading(false)
+            } )
+            .catch( (error) => {
+                setFolders([])
+                setLoading(false)
+                initialLoading && setInitialLoading(false)
+            } )
+
 	}
-
-    useEffect(() => {
-        getFolders()
-		// eslint-disable-next-line react-hooks/exhaustive-deps
-    }, [])
-
+    
 	useEffect( () => {
-		getFolders()
+        loadData()
+		const interval = setInterval(() => {
+            loadData()
+        }, 60000)
+        return () => {
+            clearInterval(interval)
+        }
 		// eslint-disable-next-line react-hooks/exhaustive-deps
-	}, [updateTrigger.value])
+	}, [])
 
     return (
         <section className="min-w-full mb-4">
