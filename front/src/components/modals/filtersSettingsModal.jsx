@@ -29,7 +29,7 @@ function FiltersSettingsModal(props)
         {
             _active.splice(_index,1)
         }
-        setFiltersActive( () => [..._active] )
+        setFiltersActive( [..._active] )
     }
 
     return (

@@ -21,7 +21,7 @@ function ColumnsConfiguratorOrder(props)
             const oldIndex = order.indexOf(active.id)
             const newIndex = order.indexOf(over.id)
             let new_order = arrayMove(order, oldIndex, newIndex)
-            setColumnsOrder( () => [...new_order] )
+            setColumnsOrder( [...new_order] )
         }
     }
 

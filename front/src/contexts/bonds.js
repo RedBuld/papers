@@ -84,6 +84,11 @@ export function GetColumnsActive(key)
 
 export function SetColumnsActive(key,active)
 {
+	if( typeof active == "function" )
+	{
+		active = active()
+	}
+	console.log('SetColumnsActive',key,active)
 	let ls_key = 'bonds_columns_active'
 	if(key)
 	{
@@ -144,6 +149,10 @@ export function GetColumnsOrder(key)
 
 export function SetColumnsOrder(key,order)
 {
+	if( typeof order == "function" )
+	{
+		order = order()
+	}
 	let ls_key = 'bonds_columns_order'
 	if(key)
 	{
@@ -182,6 +191,18 @@ export async function GetTop(query)
 {
     return API
         .get( `/bonds/top?${query}` )
+        .then( (response) => {
+            return Promise.resolve(response.data)
+        } )
+        .catch( (err) => {
+            return Promise.reject(err)
+        } )
+}
+
+export async function CheckCustom(type)
+{
+    return API
+        .get( `/bonds/check/${type}` )
         .then( (response) => {
             return Promise.resolve(response.data)
         } )

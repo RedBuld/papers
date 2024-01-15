@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react'
 import { compact } from '../../contexts/design'
 import { personalFolders } from '../../contexts/folders'
-import { API } from '../../api/api'
+import { CheckCustom } from '../../contexts/bonds'
 //
 import BondsFoldersLoadingPlaceholder from './bondsFoldersLoadingPlaceholder'
 // 
@@ -18,19 +18,23 @@ function BondsFoldersPrivate(props)
 	const [initialLoading, setInitialLoading] = useState(true)
     
     const checkComing = async () => {
-		const response = await API.get('/bonds/check/coming')
-		if( response.status === 200 )
-		{
-			setHasComing(response.data.total>0)
-		}
+        await CheckCustom('coming')
+            .then( (data) => {
+                setHasComing(data.total>0)
+            } )
+            .catch( (error) => {
+                setHasComing(false)
+            })
 	}
     
     const checkFresh = async () => {
-		const response = await API.get('/bonds/check/fresh')
-		if( response.status === 200 )
-		{
-			setHasFresh(response.data.total>0)
-		}
+        await CheckCustom('fresh')
+            .then( (data) => {
+                setHasFresh(data.total>0)
+            } )
+            .catch( (error) => {
+                setHasFresh(false)
+            })
 	}
 
     const loadData = () => {

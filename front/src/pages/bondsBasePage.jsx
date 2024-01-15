@@ -2,7 +2,7 @@ import React, { useState } from 'react'
 import BondsTable from "../components/bonds/bondsTable"
 import BondsFolders from "../components/bonds_folders/bondsFolders"
 
-function BondsPage()
+function BondsBasePage()
 {
     const [personalFolders,setPersonalFolders] = useState([])
 
@@ -24,4 +24,4 @@ function BondsPage()
     );
 }
 
-export default BondsPage
+export default BondsBasePage

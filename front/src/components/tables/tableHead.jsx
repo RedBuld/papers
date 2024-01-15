@@ -16,7 +16,7 @@ function TableHead(props)
 
     return (
         <thead className="bg-gray-50 rounded-t-lg">
-            <tr>
+            <tr className="align-middle">
                 { columnsOrder.map((column_key) => {
                     if( !(columnsActive.indexOf(column_key) > -1) || !(column_key in columns) || (columnsSkip.indexOf(column_key) > -1) )
                     {
@@ -46,21 +46,19 @@ function TableHead(props)
                     )
                 })}
                 { (useColumnsConfigurator || useAdditionalColumn) && (
-                <th className={ "w-0 text-gray-900 font-semibold text-sm text-center " + ( compact.value ? "px-3 py-2" : "px-6 py-3" ) }>
-                    <div className={ "absolute top-auto " + ( compact.value ? "right-2 -mt-2" : "right-3 -mt-3" ) }>
-                        { useColumnsConfigurator && (
-                        <ColumnsConfigurator
-                            groups={groups}
-                            columns={columns}
-                            columnsActive={columnsActive}
-                            setColumnsActive={setColumnsActive}
-                            resetColumnsActive={resetColumnsActive}
-                            columnsOrder={columnsOrder}
-                            setColumnsOrder={setColumnsOrder}
-                            resetColumnsOrder={resetColumnsOrder}
-                        />
-                        )}
-                    </div>
+                <th className={ compact.value ? "px-3" : "px-5" }>
+                    { useColumnsConfigurator && (
+                    <ColumnsConfigurator
+                        groups={groups}
+                        columns={columns}
+                        columnsActive={columnsActive}
+                        setColumnsActive={setColumnsActive}
+                        resetColumnsActive={resetColumnsActive}
+                        columnsOrder={columnsOrder}
+                        setColumnsOrder={setColumnsOrder}
+                        resetColumnsOrder={resetColumnsOrder}
+                    />
+                    )}
                 </th>
                 ) }
             </tr>

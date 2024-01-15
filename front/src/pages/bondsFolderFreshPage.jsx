@@ -23,6 +23,7 @@ function BondsFolderFreshPage()
                 useDelta={false}
                 useColumnsConfigurator={true}
                 useAdditionalColumn={true}
+                data_key={`folder_fresh`}
             />
         </div>
     );

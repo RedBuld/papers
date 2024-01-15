@@ -6,7 +6,7 @@ import Modals from './components/modals/modals'
 // 
 import Main from './theme/main'
 // 
-import BondsPage from './pages/bondsPage'
+import BondsBasePage from './pages/bondsBasePage'
 import BondsFolderBasePage from './pages/bondsFolderBasePage'
 import BondsFolderUpcomingPage from './pages/bondsFolderUpcomingPage'
 import BondsFolderFreshPage from './pages/bondsFolderFreshPage'
@@ -47,7 +47,7 @@ const App = () => {
 			<BrowserRouter>
 				<Routes>
 					<Route path="/" element={<Main />}>
-						<Route path="/" element={<BondsPage />}></Route>
+						<Route path="/" element={<BondsBasePage />}></Route>
 						<Route path="/top" element={<BondsTopPage />}></Route>
 						<Route path="/folders/coming" element={<BondsFolderUpcomingPage />}></Route>
 						<Route path="/folders/fresh" element={<BondsFolderFreshPage />}></Route>

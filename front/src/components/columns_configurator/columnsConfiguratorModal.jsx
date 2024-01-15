@@ -1,4 +1,4 @@
-import React, { useState } from 'react'
+import React, { useState, useEffect } from 'react'
 import { Transition } from '@headlessui/react'
 import ColumnsConfiguratorActive from './columnsConfiguratorActive'
 import ColumnsConfiguratorOrder from './ColumnsConfiguratorOrder'
@@ -15,6 +15,10 @@ function ColumnsConfiguratorModal(props)
     } = props
     
     const [activeMode, setActiveMode] = useState('active')
+
+    useEffect( () => {
+        console.log('refresh modal', columnsActive)
+    }, [columnsActive])
 
     return (
         <Transition
@@ -47,8 +51,8 @@ function ColumnsConfiguratorModal(props)
                         <div className="relative z-[1] p-5 bg-white rounded-b-lg">
                             <div className="flex flex-col -m-5 bg-gray-50 lg:w-[768px] rounded-b-lg overflow-hidden">
                                 <div className="flex flex-row w-full bg-white">
-                                    <div onClick={ () => setActiveMode("active") } className={"flex flex-row w-1/2 cursor-pointer px-4 py-3 justify-center items-center" + ( activeMode==="active" ? " bg-indigo-600 text-white" : " text-gray-500" )}>Активные колонки</div>
-                                    <div onClick={ () => setActiveMode("order") } className={"flex flex-row w-1/2 cursor-pointer px-4 py-3 justify-center items-center" + ( activeMode==="order" ? " bg-indigo-600 text-white" : " text-gray-500" )}>Порядок колонок</div>
+                                    <div onClick={ () => setActiveMode("active") } className={"flex flex-row w-1/2 cursor-pointer px-4 py-3 justify-center items-center font-normal" + ( activeMode==="active" ? " bg-indigo-600 text-white" : " text-gray-500" )}>Активные колонки</div>
+                                    <div onClick={ () => setActiveMode("order") } className={"flex flex-row w-1/2 cursor-pointer px-4 py-3 justify-center items-center font-normal" + ( activeMode==="order" ? " bg-indigo-600 text-white" : " text-gray-500" )}>Порядок колонок</div>
                                 </div>
                                 <div className={ ( activeMode==="active" ? "inline-flex" : "hidden" ) + " flex-col w-full px-4 py-4 space-y-4 shadow-inner"}>
                                     <ColumnsConfiguratorActive

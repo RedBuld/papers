@@ -75,6 +75,7 @@ function BondsFolderBasePage()
                 useDelta={true}
                 useColumnsConfigurator={true}
                 useAdditionalColumn={true}
+                data_key={`folder_${currentFolder.id}`}
             />
         </div>
     );

@@ -13,7 +13,7 @@ import {
 
 function BondsTableUpcoming(props)
 {
-	const data_key = 'coming'
+	const data_key = 'upcoming'
 
 	const usePagination = props?.usePagination ?? true
 

@@ -1,4 +1,4 @@
-import React from 'react'
+import React, { useEffect, useState } from 'react'
 
 function ColumnsConfiguratorActive(props)
 {
@@ -18,7 +18,7 @@ function ColumnsConfiguratorActive(props)
         {
             active.splice(_index,1)
         }
-        setColumnsActive( () => [...active] )
+        setColumnsActive( [...active] )
     }
 
     return (

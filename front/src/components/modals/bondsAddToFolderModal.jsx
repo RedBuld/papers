@@ -75,10 +75,10 @@ function BondsAddToFolderModal(props)
                             </div>
                         </div>
 
-                        <div className="relative z-[1] p-5 bg-white rounded-b-lg w-96">
+                        <div className="flex flex-col relative z-[1] p-5 gap-3 bg-white rounded-b-lg w-96">
                             { data?.all_folders.length > 0 ? (
                                 <>
-                                    <ul className="text-sm">
+                                    <ul className="text-sm max-h-96 overflow-y-auto">
                                         { data.all_folders.map( (folder) => {
                                             return (
                                                 <li key={folder.id} className="flex flex-col">

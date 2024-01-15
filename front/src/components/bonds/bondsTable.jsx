@@ -35,7 +35,7 @@ function BondsTable(props)
 	const OptsFresh = props?.Fresh ?? false
 	
 	const isPublic = props?.isPublic ?? false
-	const data_key = OptsFresh ? OptsFresh : (props?.data_key ?? 'default')
+	const data_key = props?.data_key ?? 'default'
 	
 	// DESIGN
 	const [initialLoading, setInitialLoading] = useState(true)
@@ -79,12 +79,19 @@ function BondsTable(props)
 
 	function getColumnsOrder() { return GetColumnsOrder(data_key) }
 	function setColumnsOrder(order) { _setColumnsOrder( SetColumnsOrder(data_key,order) ) }
-	function resetColumnsOrder() { _setColumnsOrder( ResetColumnsOrder(data_key) ) }
-
+	function resetColumnsOrder() { setColumnsOrder( ResetColumnsOrder(data_key) ) }
+	
 	function getColumnsActive() { return GetColumnsActive(data_key) }
 	function setColumnsActive(active) { _setColumnsActive( SetColumnsActive(data_key,active) ) }
-	function resetColumnsActive() { _setColumnsActive( ResetColumnsActive(data_key) ) }
+	function resetColumnsActive() { setColumnsActive( ResetColumnsActive(data_key) ) }
 
+	useEffect( () => {
+		console.log('changed columnsOrder',columnsOrder)
+	}, [columnsOrder] )
+	useEffect( () => {
+		console.log('changed columnsActive',columnsActive)
+	}, [columnsActive] )
+	
 	// ADD TO FOLDERS MODAL
 	const [addToFolderModalOpen,setAddToFolderModalOpen] = useState(null)
 
@@ -187,6 +194,14 @@ function BondsTable(props)
 	useEffect( () => {
 		OptsFolder && setRefresh()
 	}, [personalFolders.value])
+
+	useEffect( () => {
+		console.log('columnsOrder', columnsOrder)
+	}, [columnsOrder])
+
+	useEffect( () => {
+		console.log('columnsActive', columnsActive)
+	}, [columnsActive])
 	
 	useEffect(() => {
 		calculateRequest()
