@@ -1,10 +1,13 @@
 import React, { useState, useEffect, useMemo } from 'react'
-import { ResponsiveContainer, LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip } from 'recharts'
 import plural from 'plural-ru'
+import { pageTitle } from '../contexts/base'
+import { ResponsiveContainer, LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip } from 'recharts'
 import { API } from '../api/api'
 
 function GcurvePage()
 {
+    pageTitle.value = 'Кривая бескупонной доходности'
+
     const [curve, setCurve] = useState({})
     const [chart, setChart] = useState([])
     

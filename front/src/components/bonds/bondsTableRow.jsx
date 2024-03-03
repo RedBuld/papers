@@ -65,6 +65,10 @@ function BondsTableRow(props)
 		{
 			value = bond[key] ? bond[key].toLocaleString() : '…'
 		}
+		else if( key.slice(0,10) === "issue_size" )
+		{
+			value = bond[key] ? bond[key].toLocaleString() : '…'
+		}
 		else if( key.slice(-5) === "_date" )
 		{
             if(key in dateModes.value)
@@ -109,7 +113,7 @@ function BondsTableRow(props)
                 value = '…'
             }
         }
-        else if( key === "last_price" )
+        else if( key === "last_price" ) 
         {
             value = bond[key] ? bond[key].toLocaleString() : '…'
         }
@@ -189,7 +193,7 @@ function BondsTableRow(props)
         })
     }
 
-    function openDataModal(e)
+    function handleClick(e)
     {
         e.preventDefault()
     }
@@ -203,8 +207,35 @@ function BondsTableRow(props)
             })
     }
 
+    function selectTD(e)
+    {
+        if(e.detail!==2)
+        {
+            return
+        }
+        try {
+            const node = e.target
+            if(document.body.createTextRange)
+            {
+                const range = document.body.createTextRange()
+                range.moveToElementText(node)
+                range.select()
+            }
+            else if(window.getSelection)
+            {
+                const selection = window.getSelection()
+                const range = document.createRange()
+                range.selectNodeContents(node)
+                selection.removeAllRanges()
+                selection.addRange(range)
+            }
+        } catch (error) {
+            return console.error(error)
+        }
+    }
+
     return (
-        <a href={`/bonds/${bond.id}`} key={bond.id} onClick={openDataModal} className={"table-row align-middle hover:bg-slate-200 group" + (deleting?" opacity-50":"")}>
+        <a href={`/bonds/${bond.isin}/${bond.id}`} key={bond.id} onClick={handleClick} className={"table-row align-middle hover:bg-slate-200 group" + (deleting?" opacity-50":"")}>
             {columnsOrder.map((column_key) => {
                 if( !(columnsActive.indexOf(column_key) > -1) || !(column_key in columns) || (columnsSkip.indexOf(column_key) > -1) )
                 {
@@ -218,7 +249,7 @@ function BondsTableRow(props)
                 {
                     return null
                 }
-                return <td key={column_key} data-key={column_key} className={"text-gray-900 font-medium text-xm text-left whitespace-nowrap " + (compact.value ? "px-1 py-0.5 " : "px-3 py-2 ") + (column_key===orderBy ? "bg-slate-50 " : "") + cn} {...attrs}>{v}</td>
+                return <td key={column_key} onClick={selectTD} data-key={bond.id+'_'+column_key} className={"text-gray-900 font-medium text-xm text-left whitespace-nowrap " + (compact.value ? "px-1 py-0.5 " : "px-3 py-2 ") + (column_key===orderBy ? "bg-slate-50 " : "") + cn} {...attrs}>{v}</td>
             })}
             { (useColumnsConfigurator || useAdditionalColumn) && (
             <td className={ compact.value ? "px-3" : "px-5" }>

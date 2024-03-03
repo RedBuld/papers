@@ -1,5 +1,6 @@
 import React, { useState, useEffect, useMemo } from 'react'
 import { compact } from '../contexts/design'
+import { pageTitle } from '../contexts/base'
 import {
     allColumns
 } from '../contexts/bondsVariables'
@@ -11,6 +12,8 @@ import TableLoadingPlaceholder from '../components/tables/tableLoadingPlaceholde
 
 function BondsTopPage()
 {
+    pageTitle.value = 'Топ облигаций'
+    
     // PARAMS
     const columnsActive = useMemo( () => ['name','isin','closest_date','_folder','yields','bonus_dur'], [] )
 

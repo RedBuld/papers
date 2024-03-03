@@ -6,25 +6,25 @@ export const folderEditModalOpen = signal(false)
 export const filtersSettingsModalOpen = signal(false)
 export const currentFolder = signal(null)
 
-export const OpenLoginModal = async () => {
+export const OpenLoginModal = () => {
     loginModalOpen.value = true
 }
-export const CloseLoginModal = async () => {
+export const CloseLoginModal = () => {
     loginModalOpen.value = false
 }
 
-export const OpenRegistrationModal = async () => {
+export const OpenRegistrationModal = () => {
     registrationModalOpen.value = true
 }
-export const CloseRegistrationModal = async () => {
+export const CloseRegistrationModal = () => {
     registrationModalOpen.value = false
 }
 
-export const LoginToRegistrationModal = async () => {
+export const LoginToRegistrationModal = () => {
     registrationModalOpen.value = true
     loginModalOpen.value = false
 }
-export const RegistrationToLoginModal = async () => {
+export const RegistrationToLoginModal = () => {
     loginModalOpen.value = true
     registrationModalOpen.value = false
 }

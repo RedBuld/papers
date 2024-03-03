@@ -13,14 +13,28 @@ services:
     #         - app_psql16
     #     command: ["sleep","infinity"]
         # python -m uvicorn --host 0.0.0.0 --port 8000 --log-level debug app_v2.main:app
-    psql16:
-        image: postgres:16-alpine
-        container_name: psql16
+    # psql16:
+    #     image: postgres:16-alpine
+    #     container_name: psql16
+    #     ports:
+    #         - "5432:5432"
+    #     restart: always
+    #     environment:
+    #         POSTGRES_PASSWORD: secret
+    #     networks:
+    #         - app_psql16
+    mysql8:
+        image: mysql:8
+        container_name: mysql8
         ports:
-            - "5432:5432"
-        restart: always
+            - "3306:3306"
+        volumes:
+            - ./mysql:/var/lib/mysql
+        command: --default-authentication-plugin=mysql_native_password --character-set-server=utf8mb4 --collation-server=utf8mb4_unicode_ci
+        restart: always # always restart unless stopped manually
         environment:
-            POSTGRES_PASSWORD: secret
+            MYSQL_ROOT_PASSWORD: secret
+            MYSQL_PASSWORD: secret
         networks:
             - app_psql16
 networks:

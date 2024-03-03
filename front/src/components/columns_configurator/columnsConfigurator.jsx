@@ -22,10 +22,6 @@ function ColumnsConfigurator(props)
         setModalOpen(false)
     }
 
-    useEffect( () => {
-        console.log('refresh cc', columnsActive)
-    }, [columnsActive])
-
     return (
         <>
             <ColumnsConfiguratorModal

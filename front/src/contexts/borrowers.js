@@ -42,7 +42,8 @@ export function ResetActiveFilters(key)
 	return SetActiveFilters( key, defaultActiveFilters )
 }
 
-export const GetColumnsActive = () => {
+export function GetColumnsActive()
+{
     let ls_key = 'borrowers_columns_active'
     let _borrowersColumns = localStorage.getItem( ls_key )
     if(!_borrowersColumns)
@@ -56,17 +57,20 @@ export const GetColumnsActive = () => {
     }
 }
 
-export const SetColumnsActive = (active) => {
+export function SetColumnsActive(active)
+{
     let ls_key = 'borrowers_columns_active'
     localStorage.setItem( ls_key, JSON.stringify(active) )
     return active
 }
 
-export const ResetColumnsActive = () => {
+export function ResetColumnsActive()
+{
     return SetColumnsActive(defaultColumnsActive)
 }
 
-export const GetColumnsOrder = () => {
+export function GetColumnsOrder()
+{
     let ls_key = 'borrowers_columns_order'
 	let _borrowersColumns = localStorage.getItem( ls_key )
     if(!_borrowersColumns)
@@ -85,13 +89,15 @@ export const GetColumnsOrder = () => {
     }
 }
 
-export const SetColumnsOrder = (order) => {
+export function SetColumnsOrder(order)
+{
     let ls_key = 'borrowers_columns_order'
     localStorage.setItem( ls_key, JSON.stringify(order) )
     return order
 }
 
-export const ResetColumnsOrder = () => {
+export function ResetColumnsOrder()
+{
     return SetColumnsOrder(defaultColumnsOrder)
 }
 

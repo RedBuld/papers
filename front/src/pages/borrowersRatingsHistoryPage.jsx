@@ -1,10 +1,12 @@
 import React, { useEffect } from 'react'
-import BorrowersRatingsHistoryTable from "../components/borrowers/borrowersRatingsHistoryTable"
-import { hasHistoryUnread, setHasHistoryUnread } from '../contexts/base'
 import { effect } from '@preact/signals-react'
+import { pageTitle, hasHistoryUnread, setHasHistoryUnread } from '../contexts/base'
+import BorrowersRatingsHistoryTable from "../components/borrowers/borrowersRatingsHistoryTable"
 
 function BorrowersRatingsHistoryPage()
 {
+    pageTitle.value = 'История рейтингов'
+
     effect( () => {
         hasHistoryUnread.value && setHasHistoryUnread(false)
         // eslint-disable-next-line react-hooks/exhaustive-deps

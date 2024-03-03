@@ -16,10 +16,6 @@ function ColumnsConfiguratorModal(props)
     
     const [activeMode, setActiveMode] = useState('active')
 
-    useEffect( () => {
-        console.log('refresh modal', columnsActive)
-    }, [columnsActive])
-
     return (
         <Transition
             appear={true}

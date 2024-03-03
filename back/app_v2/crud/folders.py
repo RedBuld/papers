@@ -3,7 +3,11 @@ from typing import Any
 from sqlalchemy import func, distinct, select, delete, exists, or_, and_
 from sqlalchemy.orm import aliased
 from sqlalchemy.orm import sessionmaker
-from sqlalchemy.dialects.postgresql import insert
+from app_v2.db import SQLALCHEMY_DATABASE_TYPE
+if SQLALCHEMY_DATABASE_TYPE == 'mysql':
+    from sqlalchemy.dialects.mysql import insert as msql_insert
+if SQLALCHEMY_DATABASE_TYPE == 'psql':
+    from sqlalchemy.dialects.postgresql import insert as psql_insert
 from app_v2 import models
 from app_v2 import schemas
 
@@ -153,13 +157,24 @@ async def add_bond_to_folder(
 ) -> None:
 
     with session_maker() as session:
-        insert_statement = \
-            insert(models.BondsInFolders)\
-            .values({
-                models.BondsInFolders.folder_id: folder_id,
-                models.BondsInFolders.bond_id: bond_id,
-            })\
-            .on_conflict_do_nothing()
+
+        if SQLALCHEMY_DATABASE_TYPE == 'mysql':
+            insert_statement = \
+                msql_insert(models.BondsInFolders)\
+                .values({
+                    models.BondsInFolders.folder_id: folder_id,
+                    models.BondsInFolders.bond_id: bond_id,
+                })\
+                .on_duplicate_key_update(id=models.BondsInFolders.id)
+
+        if SQLALCHEMY_DATABASE_TYPE == 'psql':
+            insert_statement = \
+                psql_insert(models.BondsInFolders)\
+                .values({
+                    models.BondsInFolders.folder_id: folder_id,
+                    models.BondsInFolders.bond_id: bond_id,
+                })\
+                .on_conflict_do_nothing()
 
         session.execute( insert_statement )
         session.commit()

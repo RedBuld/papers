@@ -2,10 +2,13 @@ import React from 'react'
 import { useNavigate } from 'react-router-dom'
 import { effect } from '@preact/signals-react'
 import { user } from '../contexts/auth'
+import { pageTitle } from '../contexts/base'
 import BondsTableUpcoming from "../components/bonds/bondsTableUpcoming"
 
 function BondsFolderUpcomingPage()
 {
+    pageTitle.value = 'Папка "Скорое размещение"'
+
     const navigate = useNavigate()
 
     effect( () => {

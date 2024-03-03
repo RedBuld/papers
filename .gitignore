@@ -5,4 +5,5 @@ back/app_v2/parsing/*
 back/app_v2/cron.py
 front/node_modules/*
 front/build/*
+mysql/*
 *.pyc

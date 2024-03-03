@@ -1,9 +1,9 @@
 import React, { useEffect } from 'react'
 import { effect } from '@preact/signals-react'
 import { Transition } from '@headlessui/react'
+import { isLoggedIn } from '../../contexts/auth'
 import { loginModalOpen, CloseLoginModal, LoginToRegistrationModal } from '../../contexts/modals'
 import LoginForm from '../forms/loginForm'
-import { isLoggedIn } from '../../contexts/auth'
 
 function LoginModal()
 {
@@ -29,17 +29,18 @@ function LoginModal()
     }, [])
 
     return (
-        <Transition
-            appear={true}
-            show={loginModalOpen.value}
-            unmount={false}
-            as="div"
-            className="fixed z-20 transition-opacity duration-300"
-            enterFrom="opacity-0"
-            enterTo="opacity-100"
-            leaveFrom="opacity-100"
-            leaveTo="opacity-0"
-        >
+        <div className={ "fixed z-20 " + (loginModalOpen.value ? "visible" : "hidden") }>
+            {/* <Transition
+                appear={false}
+                show={loginModalOpen.value}
+                unmount={true}
+                as="div"
+                className="fixed z-20 transition-opacity duration-300"
+                enterFrom="opacity-0"
+                enterTo="opacity-100"
+                leaveFrom="opacity-100"
+                leaveTo="opacity-0"
+            > */}
             <div className="fixed bg-black/50 inset-0 max-h-full w-full overflow-x-hidden overflow-y-auto">
                 <div className="flex min-h-full min-w-full max-w-full items-end justify-center p-3 text-center sm:items-center" tabIndex={loginModalOpen.value ? 1 : -1}>
                     <div className="relative rounded-lg text-left shadow-xl max-h-full max-w-full">
@@ -68,7 +69,8 @@ function LoginModal()
                     </div>
                 </div>
             </div>
-        </Transition>
+            {/* </Transition> */}
+        </div>
     )
 }
 

@@ -1,6 +1,7 @@
 import React, { useEffect, useState } from 'react'
 import { useParams, useNavigate } from 'react-router-dom'
 import { effect } from '@preact/signals-react'
+import { pageTitle } from '../contexts/base'
 import { user } from '../contexts/auth'
 import { GetOne } from '../contexts/folders'
 import BondsTable from "../components/bonds/bondsTable"
@@ -32,6 +33,11 @@ function BondsFolderBasePage()
         user.value?.id || navigate("/")
 		// eslint-disable-next-line react-hooks/exhaustive-deps
     }, [user])
+
+    useEffect( () => {
+        pageTitle.value = currentFolder ? `Папка "${currentFolder.name}"` : 'Папка'
+		// eslint-disable-next-line react-hooks/exhaustive-deps
+    }, [currentFolder])
 
     useEffect( () => {
         getFolder()

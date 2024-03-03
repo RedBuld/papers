@@ -6,7 +6,7 @@ function LoginForm(props)
     // const { setError } = props
 
     const [error, _setError] = useState(null)
-    const setError = async (data) => {
+    const setError = (data) => {
 
         _setError(data)
 

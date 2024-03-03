@@ -29,7 +29,7 @@ async def get_curve_history(
 ):
     # Authorize.jwt_required()
 
-    from_date = datetime.datetime.strptime(from_date, '%Y-%m-%d').date()
+    from_date = datetime.strptime(from_date, '%Y-%m-%d').date()
 
     curve = await crud.get_curve_history(session, from_date=from_date)
 

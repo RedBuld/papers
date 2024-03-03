@@ -187,6 +187,18 @@ export async function GetAll(query, payload)
         } )
 }
 
+export async function GetOne(id)
+{
+    return API
+        .get( `/bonds/id/${id}` )
+        .then( (response) => {
+            return Promise.resolve(response.data)
+        } )
+        .catch( (err) => {
+            return Promise.reject(err)
+        } )
+}
+
 export async function GetTop(query)
 {
     return API

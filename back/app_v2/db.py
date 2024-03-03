@@ -5,8 +5,13 @@ from sqlalchemy.ext.declarative import declarative_base
 # from sqlalchemy.ext.asyncio import create_async_engine
 # from sqlalchemy.ext.asyncio import async_sessionmaker
 
-SQLALCHEMY_DATABASE_URL = "postgresql://papers.front:papers.front@localhost:5432/papers" # ?unix_socket=/var/run/mysqld/mysqld.sock&charset=utf8mb4
-SQLALCHEMY_DATABASE_URL_CRON = "postgresql://papers.cron:papers.cron@localhost:5432/papers" # ?unix_socket=/var/run/mysqld/mysqld.sock&charset=utf8mb4
+# SQLALCHEMY_DATABASE_TYPE='psql'
+SQLALCHEMY_DATABASE_TYPE='mysql'
+
+# SQLALCHEMY_DATABASE_URL = "postgresql://papers.front:papers.front@localhost:5432/papers" # ?unix_socket=/var/run/mysqld/mysqld.sock&charset=utf8mb4
+# SQLALCHEMY_DATABASE_URL_CRON = "postgresql://papers.cron:papers.cron@localhost:5432/papers" # ?unix_socket=/var/run/mysqld/mysqld.sock&charset=utf8mb4
+SQLALCHEMY_DATABASE_URL = "mysql+pymysql://papers.front:papers.front@localhost:3306/papers" # ?unix_socket=/var/run/mysqld/mysqld.sock&charset=utf8mb4
+SQLALCHEMY_DATABASE_URL_CRON = "mysql+pymysql://papers.cron:papers.cron@localhost:3306/papers" # ?unix_socket=/var/run/mysqld/mysqld.sock&charset=utf8mb4
 
 # engine_front = create_async_engine(
 #     SQLALCHEMY_DATABASE_URL,

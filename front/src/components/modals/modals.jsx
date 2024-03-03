@@ -6,8 +6,6 @@ function Modals()
 {
     return (
         <div className="relative z-20">
-            {/* <SingleBondModal/>
-            <SingleBorrowerModal/> */}
             <LoginModal />
             <RegistrationModal />
         </div>

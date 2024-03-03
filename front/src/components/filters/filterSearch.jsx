@@ -1,7 +1,7 @@
 import React from 'react'
 import debounce from 'lodash.debounce'
 
-function Search({setValue})
+function FilterSearch({setValue})
 {
 	const throttleSearch = debounce((e) => {
         setValue(e.target.value.trim())
@@ -21,4 +21,4 @@ function Search({setValue})
     );
 }
 
-export default Search;
+export default FilterSearch;

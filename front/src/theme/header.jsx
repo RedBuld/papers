@@ -37,9 +37,9 @@ function Header()
                 </button>
                 <div className="pt-6 pb-2 overflow-y-auto">
                     <div className="space-y-2 font-medium">
-                        <NavLink to="/" className={ ({ isActive }) => "flex items-center px-2 py-2 text-sm text-center font-medium text-gray-900 border-b-2 hover:border-gray-700 " + (isActive ? "border-indigo-500" : "border-transparent") }>Облигации</NavLink>
+                        <NavLink to="/bonds" className={ ({ isActive }) => "flex items-center px-2 py-2 text-sm text-center font-medium text-gray-900 border-b-2 hover:border-gray-700 " + (isActive ? "border-indigo-500" : "border-transparent") }>Облигации</NavLink>
                         { isLoggedIn.value && (
-                        <NavLink to="/public" className={ ({ isActive }) => "flex items-center px-2 py-2 text-sm text-center font-medium text-gray-900 border-b-2 hover:border-gray-700 " + (isActive ? "border-indigo-500" : "border-transparent") }>Интересные подборки</NavLink>
+                        <NavLink to="/folders/public" className={ ({ isActive }) => "flex items-center px-2 py-2 text-sm text-center font-medium text-gray-900 border-b-2 hover:border-gray-700 " + (isActive ? "border-indigo-500" : "border-transparent") }>Интересные подборки</NavLink>
                         )}
                         { isLoggedIn.value && (
                         <NavLink to="/top" className={ ({ isActive }) => "flex items-center px-2 py-2 text-sm text-center font-medium text-gray-900 border-b-2 hover:border-gray-700 " + (isActive ? "border-indigo-500" : "border-transparent") }>Топ облигаций</NavLink>
@@ -63,9 +63,9 @@ function Header()
                         </div>
                         <div className="hidden lg:flex flex-row flex-1 justify-start items-stretch">
                             <div className="flex flex-row space-x-3">
-                                <NavLink to="/" className={ ({ isActive }) => "inline-flex items-center px-1 pt-1 text-sm font-medium text-gray-900 border-b-2 hover:border-gray-700 " + (isActive ? "border-indigo-500" : "border-transparent") }>Облигации</NavLink>
+                                <NavLink to="/bonds" className={ ({ isActive }) => "inline-flex items-center px-1 pt-1 text-sm font-medium text-gray-900 border-b-2 hover:border-gray-700 " + (isActive ? "border-indigo-500" : "border-transparent") }>Облигации</NavLink>
                                 { isLoggedIn.value && (
-                                <NavLink to="/public" className={ ({ isActive }) => "inline-flex items-center px-1 pt-1 text-sm font-medium text-gray-900 border-b-2 hover:border-gray-700 " + (isActive ? "border-indigo-500" : "border-transparent") }>Интересные подборки</NavLink>
+                                <NavLink to="/folders/public" className={ ({ isActive }) => "inline-flex items-center px-1 pt-1 text-sm font-medium text-gray-900 border-b-2 hover:border-gray-700 " + (isActive ? "border-indigo-500" : "border-transparent") }>Интересные подборки</NavLink>
                                 )}
                                 { isLoggedIn.value && (
                                 <NavLink to="/top" className={ ({ isActive }) => "inline-flex items-center px-1 pt-1 text-sm font-medium text-gray-900 border-b-2 hover:border-gray-700 " + (isActive ? "border-indigo-500" : "border-transparent") }>Топ облигаций</NavLink>

@@ -2,10 +2,13 @@ import React from 'react'
 import { useNavigate } from 'react-router-dom'
 import { effect } from '@preact/signals-react'
 import { user } from '../contexts/auth'
+import { pageTitle } from '../contexts/base'
 import BondsTable from "../components/bonds/bondsTable"
 
 function BondsFolderFreshPage()
 {
+    pageTitle.value = 'Папка "Недавно торгуются"'
+
     const navigate = useNavigate()
 
     effect( () => {

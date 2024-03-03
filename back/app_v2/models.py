@@ -5,7 +5,7 @@ import asyncio
 from datetime import date, datetime
 from email.policy import default
 from sqlalchemy import func, select, exists, or_, and_
-from sqlalchemy import Boolean, Table, Column, BigInteger, Float, String, Text, Date, DateTime, Computed, JSON, UniqueConstraint
+from sqlalchemy import SmallInteger, Column, BigInteger, Float, String, Text, Date, DateTime, Computed, JSON, UniqueConstraint
 from sqlalchemy.orm import relationship
 from sqlalchemy.orm import Mapped
 from typing import List
@@ -19,7 +19,7 @@ class User(Base):
     email: Mapped[str]                            = Column("email", String(250), unique=True, index=True)
     hashed_password: Mapped[str]                  = Column("hashed_password", String(250))
     activation_code: Mapped[str | None]           = Column("activation_code", String(6), nullable=True)
-    is_active: Mapped[bool]                       = Column("is_active", Boolean, default=False)
+    is_active: Mapped[bool]                       = Column("is_active", SmallInteger, default=False)
     role: Mapped[int]                             = Column("role", BigInteger, default=1)
 
     # folders: Mapped[ List[Folder] ] = relationship( foreign_keys=id, remote_side="Folder.user_id" )
@@ -181,7 +181,8 @@ class Bond(Base):
     # securities | 1/d
     maturity_date: Mapped[datetime | None]        = Column("maturity_date", Date, nullable=True) # MATDATE | Дата погашения
     offer_date: Mapped[datetime | None]           = Column("offer_date", Date, nullable=True) # OFFERDATE | Дата Оферты
-    closest_date: Mapped[datetime | None]         = Column("closest_date", Date, Computed("CASE WHEN offer_date IS NULL THEN maturity_date ELSE offer_date END",persisted=True)) # offer_date ?? maturity_date
+    # closest_date: Mapped[datetime | None]         = Column("closest_date", Date, Computed("CASE WHEN offer_date IS NULL THEN maturity_date ELSE offer_date END", persisted=True)) # psql
+    closest_date: Mapped[datetime | None]         = Column("closest_date", Date, Computed("IF(offer_date IS NULL, maturity_date, offer_date)",persisted=True)) # mysql
     coupon_date: Mapped[datetime | None]          = Column("coupon_date", Date, nullable=True) # NEXTCOUPON | Дата ближайшего купона
     coupon_percent: Mapped[float | None]          = Column("coupon_percent", Float, nullable=True) # COUPONPERCENT | Ставка купона, %
     coupon_value: Mapped[float | None]            = Column("coupon_value", Float, nullable=True) # COUPONVALUE | Сумма купона, FACEUNIT
@@ -203,7 +204,10 @@ class Bond(Base):
     lot_size: Mapped[int | None]                  = Column("lot_size", BigInteger, nullable=True) # LOTSIZE | Размер лота
     lot_value: Mapped[int | None]                 = Column("lot_value", BigInteger, nullable=True) # LOTVALUE | Номинал лота
     # marketdata | 1/d
-    duration: Mapped[int | None]                  = Column("duration", BigInteger, nullable=True) # DURATION | Дюрация, дней
+    maturity_duration                             = Column("maturity_duration", BigInteger, nullable=True) # marketdata_yields DURATION | Дюрация, дней
+    offer_duration                                = Column("offer_duration", BigInteger, nullable=True) # marketdata DURATION | Дюрация, дней
+    # duration                                      = Column("duration", BigInteger, Computed('CASE WHEN offer_duration IS NULL THEN maturity_duration ELSE offer_duration END', persisted=True)) # psql
+    duration                                      = Column("duration", BigInteger, Computed('IF(offer_duration IS NULL, maturity_duration, offer_duration)',persisted=True)) # mysql
     liquidity_month_qty: Mapped[int]              = Column("liquidity_month_qty", BigInteger, default=0) # ликвидность / месяц, шт
     liquidity_month_sum: Mapped[int]              = Column("liquidity_month_sum", BigInteger, default=0) # ликвидность / месяц, руб
     liquidity_week_qty: Mapped[int]               = Column("liquidity_week_qty", BigInteger, default=0) # ликвидность / неделя, руб
@@ -221,7 +225,7 @@ class Bond(Base):
     # 
     bonus: Mapped[float | None]                   = Column("bonus", Float, nullable=True)
     bonus_dur: Mapped[float | None]               = Column("bonus_dur", Float, nullable=True)
-    is_moex: Mapped[bool]                         = Column("is_moex", Boolean, default=False)
+    is_moex: Mapped[bool]                         = Column("is_moex", SmallInteger, default=False)
 
     # borrower: Mapped[ Borrower ]                 = relationship(
     #     "Borrower",
@@ -258,8 +262,10 @@ class BondCompositeRating(Base):
     bond_forecast: Mapped[str | None]             = Column("bond_forecast", String(250), nullable=True)
     borrower_value: Mapped[str | None]            = Column("borrower_value", String(250), nullable=True)
     borrower_forecast: Mapped[str | None]         = Column("borrower_forecast", String(250), nullable=True)
-    value: Mapped[str | None]                     = Column("value", String(250), Computed("CASE WHEN bond_value IS NULL THEN borrower_value ELSE bond_value END",persisted=True), nullable=True)
-    forecast: Mapped[str | None]                  = Column("forecast", String(250), Computed("CASE WHEN bond_forecast IS NULL THEN borrower_forecast ELSE bond_forecast END",persisted=True), nullable=True)
+    # value: Mapped[str | None]                     = Column("value", String(250), Computed("CASE WHEN bond_value IS NULL THEN borrower_value ELSE bond_value END",persisted=True), nullable=True) # psql
+    value: Mapped[str | None]                     = Column("value", String(250), Computed("IF(bond_value IS NULL, borrower_value, bond_value)",persisted=True), nullable=True) # mysql
+    # forecast: Mapped[str | None]                  = Column("forecast", String(250), Computed("CASE WHEN bond_forecast IS NULL THEN borrower_forecast ELSE bond_forecast END",persisted=True), nullable=True) # psql
+    forecast: Mapped[str | None]                  = Column("forecast", String(250), Computed("IF(bond_forecast IS NULL, borrower_forecast, bond_forecast)",persisted=True), nullable=True) # mysql
 
 #
 
@@ -298,8 +304,8 @@ class Folder(Base):
     name: Mapped[str]                             = Column("name", String(250))
     user_id: Mapped[int]                          = Column("user_id", BigInteger, ) # ForeignKey("users.id")
     sort_index: Mapped[int]                       = Column("sort_index", BigInteger, default=0)
-    public: Mapped[bool]                          = Column("public", Boolean, default=False)
-    top3: Mapped[bool]                            = Column("top3", Boolean, default=False)
+    public: Mapped[bool]                          = Column("public", SmallInteger, default=False)
+    top3: Mapped[bool]                            = Column("top3", SmallInteger, default=False)
 
     # user: Mapped[ User ]        = relationship(back_populates="folders")
     # bonds: Mapped[ List[Bond] ] = relationship( foreign_keys=id, remote_side="BondsInFolders.folder_id", secondary=BondsInFolders )
@@ -326,8 +332,8 @@ class Chat(Base):
     __tablename__ = "chats"
 
     id: Mapped[str]                              = Column("id", BigInteger, primary_key=True) # ForeignKey("users.id")
-    unread_owner: Mapped[bool]                   = Column("unread_owner", Boolean, default=False)
-    unread_admin: Mapped[bool]                   = Column("unread_admin", Boolean, default=False)
+    unread_owner: Mapped[bool]                   = Column("unread_owner", SmallInteger, default=False)
+    unread_admin: Mapped[bool]                   = Column("unread_admin", SmallInteger, default=False)
     updated: Mapped[datetime]                    = Column("updated", DateTime, default=datetime.now)
 
     user: Mapped[ User ] = relationship(

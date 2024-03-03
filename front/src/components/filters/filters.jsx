@@ -5,7 +5,7 @@ import FilterSelect from './filterSelect'
 import FilterToggler from './filterToggler'
 import FilterRange from './filterRange'
 import FilterDateRange from './filterDateRange'
-import Search from './search'
+import FilterSearch from './filterSearch'
 import FiltersSettingsModal from '../modals/filtersSettingsModal'
 
 function Filters(props)
@@ -136,7 +136,7 @@ function Filters(props)
                 }
                 return null
             }) }
-            <Search
+            <FilterSearch
                 value={filtersValues['search']}
                 setValue={ (val) => { setFiltersValues( (prev) => ({ ...prev, 'search':val }) ) }}
             />
