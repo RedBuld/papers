@@ -3,14 +3,14 @@ import axios from 'axios'
 import { session } from '../contexts/auth'
 
 export const API = axios.create({
-    baseURL: 'http://192.168.1.231:8000',
+    baseURL: 'https://oko-test.grampus-studio.ru/api',
     headers: {
         "Content-Type": "application/json",
     },
 })
 
 export const RAW = axios.create({
-    baseURL: 'http://192.168.1.231:8000',
+    baseURL: 'https://oko-test.grampus-studio.ru/api',
     headers: {
         "Content-Type": "application/json",
     },
